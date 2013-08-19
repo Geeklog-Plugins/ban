@@ -38,19 +38,45 @@
 
 $LANG_BAN00 = array (
     'ban'           => 'Ban',
-    'type'          => 'Ban Type',
+    'type'          => 'Type',
     'data'          => 'Data',
+    'id'            => 'ID',
+    'status'        => 'Status',
+    'created'       => 'Created',
+    'ttl'           => 'Time To Live',
+    'note'          => 'Note',
     'desc'          => 'Ban Bad IPs and Bots from your website.',
-    'info'          => 'You can ban and bots people from you website.  You can ban then by IP (use REMOTE_ADDR), referer (use HTTP_REFERER), user agent (use HTTP_USER_AGENT) or page (use SCRIPT_NAME).  Match patterns use case insensitive regular expressions (eregi). See <a href="' . $_CONF['site_admin_url'] . '/plugins/ban/readme.html">Readme</a><br><br>Here is what you have banned now.',
-    'add'           => 'Add Ban',
-    'delete'        => 'Delete Ban',
-    'access_denied'     => 'Access Denied',
-	'access_denied_msg' => 'Only Root Users or Ban Users have Access to this Page.  Your user name and IP have been recorded.',
-	'install_success'	=> 'Installation Successful',
-	'install_failed'	=> 'Installation Failed -- See your error log to find out why.',
-	'install'           => 'Install',
-	'uninstall'         => 'UnInstall',
-    'installmsg3'       => 'STOP! Before you press install please read '
+    'instructions'  => 'You can ban bots and people from you website.  You can ban by IP (use REMOTE_ADDR), referer (use HTTP_REFERER), user agent (use HTTP_USER_AGENT) or page (use SCRIPT_NAME).  To match patterns use case insensitive regular expressions (preg_match). With REMOTE_ADDR you may also add IP address ranges, either in CIDR notation or as simple from-to ranges. See the Ban Plugin <a href="' . $_CONF['site_admin_url'] . '/plugins/ban/readme.html">Read Me</a> for more information.<br><br>Here is what you have banned now:',
+    'save'          => 'Save',
+    'cancel'        => 'Cancel',
+    'delete'        => 'Delete',
+    'edit'          => 'Edit',
+    'ban_editor'    => 'Ban Editor',
+    'ban_list'      => 'Ban List',
+    'log_viewer'    => 'Log Viewer',
+
+    'status_normal'         => 'Normal',
+    'status_ttl_short'      => 'TTL Short',
+    'status_ttl_medium'     => 'TTL Medium',
+    'status_ttl_long'       => 'TTL Long',
+    'status_white'          => 'White',
+    
+    'gus_user_agent_note'   => "GUS User Agents exceeded ({$_BAN_CONF['gus_user_agent_num']}) for ip within the last {$_BAN_CONF['gus_user_agent_time']} seconds.",
+    'gus_hits_note'         => "GUS Hits exceeded ({$_BAN_CONF['gus_hits_num']}) for ip within the last {$_BAN_CONF['gus_hits_time']} seconds.",
+    'gus_referrer_note'     => "GUS referrer exceeded ({$_BAN_CONF['gus_referrer_num']}) matches for ip within the last {$_BAN_CONF['gus_referrer_time']} seconds.",
+    
+    'stopforumspam_note'   => "Your Stop Forum Spam database is older than {$_BAN_CONF['stopforumspam_file_date']} days. Please download a new database at the <a href='http://www.stopforumspam.com/downloads/' target='_blank'>Stop Forum Spam</a> website.",
+    
+    'error_editor_no_data'  => 'Your ban must have a type, status and data.',
+    'access_denied'         => 'Access Denied',
+	'access_denied_msg'     => 'Only Root Users or Ban Users have Access to this Page.  Your user name and IP have been recorded.'
 );
+
+###############################################################################
+# Messages for COM_showMessage the submission form
+
+$PLG_ban_MESSAGE1 = "Your ban has been saved successfully.";
+$PLG_ban_MESSAGE2 = 'Your ban has been deleted successfully.';
+$PLG_ban_MESSAGE3 = 'Your selected bans have been deleted.';
 
 ?>
