@@ -30,26 +30,161 @@
 // |                                                                           |
 // +---------------------------------------------------------------------------+
 //
-// $Id: 
 
-$langfile = $_CONF['path'] . 'plugins/ban/language/' . $_CONF['language'] . '.php';
 
-if (file_exists ($langfile)) 
-{
-    include_once ($langfile);
-}
-else 
-{
-    require_once ($_CONF['path'] . 'plugins/ban/language/english.php');
+if (strpos(strtolower($_SERVER['PHP_SELF']), 'functions.inc') !== false) {
+    die('This file can not be used on its own.');
 }
 
+$plugin_path = $_CONF['path'] . 'plugins/ban/';
+
+
+/**
+* Check and see if we need to load the plugin configuration
+*/
+if (!isset($_BAN_CONF['log'])) {
+    require_once $_CONF['path_system'] . 'classes/config.class.php';
+
+    $ban_config = config::get_instance();
+    $_BAN_CONF = $ban_config->get_config('ban');
+}
 require_once ($_CONF['path'] . 'plugins/ban/config.php');
 
-BAN_check();
+/**
+* Language file include
+*/
+$langfile = $plugin_path . 'language/' . $_CONF['language'] . '.php';
+if (file_exists($langfile)) {
+    require_once $langfile;
+} else {
+    require_once $plugin_path . 'language/english.php';
+}
+
+
+/**
+ * Ban plugin table(s)
+ */
+$_TABLES['ban']  = $_DB_table_prefix . 'ban';	
+
+$installed_version = DB_getItem($_TABLES['plugins'], 'pi_version',
+                                "pi_name = 'ban'");
+$code_version = plugin_chkVersion_ban();
+if ($installed_version == $code_version) {
+    BAN_check();
+}
 
 // +---------------------------------------------------------------------------+
 // | Geeklog Plugin API Implementations                                        |
 // +---------------------------------------------------------------------------+
+
+/**
+* Return the current version of code.
+* Used in the Plugin Editor to show the registered version and code version
+*/
+function plugin_chkVersion_ban()
+{
+    global $_CONF;
+
+    require_once $_CONF['path'] . 'plugins/ban/autoinstall.php';          
+
+    $inst_parms = plugin_autoinstall_ban('ban'); 
+
+    return $inst_parms['info']['pi_version'];
+}
+
+/**
+* Update the Autotags plugin
+*
+* @return   int     Number of message to display (true = generic success msg)
+*
+*/
+function plugin_upgrade_ban()
+{
+    global $_CONF, $_TABLES, $_DB_dbms;
+
+    $installed_version = DB_getItem($_TABLES['plugins'], 'pi_version',
+                                    "pi_name = 'ban'");
+    $code_version = plugin_chkVersion_ban();
+    if ($installed_version == $code_version) {
+        // nothing to do
+        return true;
+    }
+
+    require_once $_CONF['path'] . 'plugins/ban/autoinstall.php';
+
+    if (! plugin_compatible_with_this_version_ban('ban')) {
+        return 3002;
+    }
+
+    $inst_parms = plugin_autoinstall_ban('ban');
+    $pi_gl_version = $inst_parms['info']['pi_gl_version'];
+
+    require_once $_CONF['path'] . 'plugins/ban/sql/'
+                                . $_DB_dbms . '_updates.php';
+                                
+    //require_once $_CONF['path'] . 'plugins/ban/install_updates.php';                                
+
+    $current_version = $installed_version;
+    $done = false;
+    while (! $done) {
+        switch ($current_version) {
+        case '1.0':
+        case '1.0.1':
+        case '1.0.2':            
+            $current_version = '1.0.3';
+            break;
+
+        case '1.0.3':
+            if (isset($_UPDATES[$current_version])) {
+                $_SQL = $_UPDATES[$current_version];
+                foreach ($_SQL as $sql) {
+                    DB_query($sql);
+                }
+            }
+            
+            //ban_update_ConfValues_1_0_3();
+            //ban_update_ConfigSecurity_1_0_3();
+            
+            $current_version = '2.0.0';
+            break;
+
+        default:
+            $done = true;
+        }
+    }
+
+    DB_query("UPDATE {$_TABLES['plugins']} SET pi_version = '$code_version', pi_gl_version = '$pi_gl_version' WHERE pi_name = 'ban'");
+
+    return true;
+}
+
+/**
+* Automatic uninstall function for plugins
+*
+* @return   array
+*
+* This code is automatically uninstalling the plugin.
+* It passes an array to the core code function that removes
+* tables, groups, features and php blocks from the tables.
+* Additionally, this code can perform special actions that cannot be
+* foreseen by the core code (interactions with other plugins for example)
+*
+*/
+function plugin_autouninstall_ban ()
+{
+    $out = array (
+        /* give the name of the tables, without $_TABLES[] */
+        'tables' => array('ban'),
+        /* give the full name of the group, as in the db */
+        'groups' => array('Ban Admin'),
+        /* give the full name of the feature, as in the db */
+        'features' => array('ban.admin'), 
+//                            'config.autotags.tab_autotag_permissions'),            
+        /* give all vars with their name */
+        'vars'=> array('ban_last_ttl_check')
+    );
+    return $out;
+}
 
 /**
 * Returns the items for this plugin that should appear on the main menu
@@ -98,13 +233,16 @@ function plugin_showstats_ban($showsitestats)
 */
 function plugin_cclabel_ban() 
 {
-    global $LANG_BAN00, $_CONF, $_ST_plugin_name;
+    global $LANG_BAN00, $_CONF;
 
     $retval = array();
     if ((SEC_inGroup('Root')) || (SEC_hasRights('ban.admin'))) {
-        $retval = array($LANG_BAN00['ban'],$_CONF['site_admin_url'] . '/plugins/ban/index.php',$_CONF['site_admin_url'] . '/plugins/ban/ban.gif');
+        return array($LANG_BAN00['ban'],
+                $_CONF['site_admin_url'] . '/plugins/ban/index.php',
+                plugin_geticon_ban());
     }
-    return $retval;
+    
+    return false;
 }
 
 /**
@@ -113,10 +251,14 @@ function plugin_cclabel_ban()
 */
 function plugin_getadminoption_ban() 
 {
-    global $LANG_BAN00, $_CONF;
+    global $LANG_BAN00, $_CONF, $_TABLES;
 
     if ((SEC_inGroup('Root')) || (SEC_hasRights('ban.admin'))) {
-        return array($LANG_BAN00['ban'],$_CONF['site_admin_url'] . '/plugins/ban/index.php',0);
+        $result = DB_query ("SELECT count(*) AS cnt FROM {$_TABLES['ban']}");
+        $A = DB_fetchArray ($result);
+        $total_bans = $A['cnt'];
+        
+        return array($LANG_BAN00['ban'],$_CONF['site_admin_url'] . '/plugins/ban/index.php',$total_bans);
     }
 }
 
@@ -140,30 +282,291 @@ function plugin_getuseroption_ban()
 
 function BAN_check()
 {
-    global $_TABLES, $_BAN_log, $_BAN_page;
+    global $_TABLES, $_BAN_CONF, $_PLUGINS, $_TABLES, $LANG_BAN00, $_CONF;
     
-		$HTTP_USER_AGENT = $_SERVER['HTTP_USER_AGENT']; 
-		$REMOTE_ADDR = $_SERVER['REMOTE_ADDR'];
-		$HTTP_REFERER = $_SERVER['HTTP_REFERER'];
-		$SCRIPT_NAME = $_SERVER['SCRIPT_NAME'];
-		
-    $result = DB_Query("SELECT * FROM {$_TABLES['ban']}",1);
+    $HTTP_USER_AGENT = $_SERVER['HTTP_USER_AGENT']; 
+    $REMOTE_ADDR = $_SERVER['REMOTE_ADDR'];
+    $HTTP_REFERER = $_SERVER['HTTP_REFERER'];
+    $SCRIPT_NAME = $_SERVER['SCRIPT_NAME'];
+    
+    $current_date = date("Y-m-d H:i:s");
+    $dateinsec = strtotime($current_date);    
+    
+    $ans = 0; // flag for if anything is tripped
+
+    // Check our own Ban table
+    $result = DB_Query("SELECT bantype, data, status FROM {$_TABLES['ban']} ORDER BY status ASC",1);
     $nrows = DB_numRows( $result );
-    for( $i = 1; $i <= $nrows; $i++ ) {
+    
+    for ($i = 0; $i < $nrows; $i++) {
         $A = DB_fetchArray($result);
         
-        if (eregi($A['data'],$$A['bantype'])) {
-            if ($_BAN_log) {
-                BAN_Log('Access Banned because ' . $$A['bantype'] . " matches {$A['data']}");
-            }
-            if ($_BAN_page != '') {
-                echo COM_refresh($_BAN_page);
-                die();
+        $ip = $$A['bantype']; // info like ip,domain to check
+        $val = $A['data']; // What we are looking for to ban
+        $status = $A['status']; // Ban Status
+        $matches = false;
+
+        // Allow for Remote Addresses CIDR and ranges along with preg_match (Borrowed from Spam-X)
+        if ($A['bantype'] == 'REMOTE_ADDR') {
+            if (strpos($val, '/') !== false) {
+                $matches = BAN_matchCIDR($ip, $val);
+            } elseif (strpos($val, '-') !== false) {
+                $matches = BAN_matchRange($ip, $val);
             } else {
-                die();
+                //04/10/13 06:07:56 - Access Banned because 46.118.123.107 matches 46.118.123.10 
+                //$matches = (preg_match("#$val#i", $ip) == 0 ? false : true);
+                //$matches = (($val == $ip) == 0 ? false : true);
+                $matches = (preg_match("#^$val$#i", $ip) == 0 ? false : true);
+            }
+        } else {
+            $matches = (preg_match("#$val#i", $ip) == 0 ? false : true);
+        }
+
+        if ($matches) {
+            $ans = 1; // quit on first positive match
+            
+            if ($status == CONST_BAN_STATUS_WHITE) {
+               break;
+            } else {
+                if ($_BAN_CONF['logging']) {
+                    BAN_Log('Access Banned because ' . $$A['bantype'] . " matches {$A['data']}");
+                }
+                if ($_BAN_CONF['page'] != '') {
+                    echo COM_refresh($_BAN_page);
+                    die();
+                } else {
+                    die();
+                }
             }
         }
     }
+    
+
+    // Check stop forum spam banned ips list as long as $ans not tripped (white list or other wise)        
+    if ($_BAN_CONF['stopforumspam'] AND $ans == 0) {
+        $db_location = $_CONF['path'] . 'plugins/ban/files/bannedips.csv';
+        $banned_ip_count = ipcheck_stopforumspam($REMOTE_ADDR, $db_location);
+        if ($banned_ip_count >= 1){
+            // We know ip not on white list since it did not trip above
+            if ($_BAN_CONF['logging']) {
+                BAN_Log("Access Banned because $REMOTE_ADDR matches Stop Forum Spam database");
+            }
+        }
+    }    
+
+    // Auto Ban
+    if ($_BAN_CONF['ban_auto'] AND $ans == 0) { // Don't need to autoban if already banned or on whitelist
+
+        if (in_array("gus", $_PLUGINS)) {
+            // Find GUS stats table. We set this since if ban plugin loaded before gus we will not know table name
+            // If ban plugin loaded after gus then gus will record banned ips stats
+            if (isset($_TABLES['gus_userstats'])) {
+                $gus_userstats_table = $_TABLES['gus_userstats'];
+            } else {
+                $gus_userstats_table = $_BAN_CONF['gus_userstats_table'];
+            }
+
+            // Check: Referrer in a given time by IP. If they match the text then ban
+            if ($_BAN_CONF['gus_referrer'] AND $ans == 0) {
+                $new_date = $dateinsec - $_BAN_CONF['gus_referrer_time'];
+                $new_date = date('Y-m-d H:i:s', $new_date);
+                
+                foreach ($_BAN_CONF['gus_referrer_match'] as $match) {
+                    if (strlen($match) > $_BAN_CONF['gus_referrer_min']) {
+                        // Based on the gus function GUS_getEncodedURL to convert urls for the database (since using entities)
+                        $match = urlencode(addslashes($match));
+                        $match = str_replace('%', '\%', $match);
+                        
+                        $sql = "SELECT ip 
+                            FROM $gus_userstats_table  
+                            WHERE ip = '{$REMOTE_ADDR}'
+                            AND referer LIKE '%$match%'
+                            AND  DATE_ADD(`date`, INTERVAL `time` HOUR_SECOND) >= '$new_date'";
+
+                        $result = DB_Query($sql);
+                        $nrows = DB_numRows($result);
+        
+                        if ($_BAN_CONF['gus_referrer_num'] <= $nrows) {
+                            $ans = 1;
+                            // IP has to many user agents in a given time so ban
+                            DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('REMOTE_ADDR', '{$REMOTE_ADDR}', {$_BAN_CONF['gus_referrer_status']}, '{$LANG_BAN00['gus_referrer_note']}')",1);
+                            
+                            break;
+                        }
+                    }
+                }
+                
+            }
+            
+            // Check: Number of user agents in a given time by IP
+            if ($_BAN_CONF['gus_user_agent'] AND $ans == 0) {
+                $new_date = $dateinsec - $_BAN_CONF['gus_user_agent_time'];
+                $new_date = date('Y-m-d H:i:s', $new_date);
+    
+                $sql = "SELECT ua_id 
+                    FROM $gus_userstats_table  
+                    WHERE ip = '{$REMOTE_ADDR}' 
+                    AND  DATE_ADD(`date`, INTERVAL `time` HOUR_SECOND) >= '$new_date'
+                    GROUP BY ua_id";
+                
+                $result = DB_Query($sql);
+                $nrows = DB_numRows($result);
+
+                if ($_BAN_CONF['gus_user_agent_num'] <= $nrows) {
+                    $ans = 1;
+                    // IP has to many user agents in a given time so ban
+                    DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('REMOTE_ADDR', '{$REMOTE_ADDR}', {$_BAN_CONF['gus_user_agent_status']}, '{$LANG_BAN00['gus_user_agent_note']}')",1);
+                }
+                
+            }
+            
+            // Check: Number of hits in a certain time period for ip
+            if ($_BAN_CONF['gus_hits'] AND $ans == 0) {
+                $new_date = $dateinsec - $_BAN_CONF['gus_hits_time'];
+                $new_date = date('Y-m-d H:i:s', $new_date);
+    
+                $sql = "SELECT COUNT(ip) count_ip
+                    FROM $gus_userstats_table  
+                    WHERE ip = '{$REMOTE_ADDR}' 
+                    AND  DATE_ADD(`date`, INTERVAL `time` HOUR_SECOND) >= '$new_date'";
+                
+                $result = DB_Query($sql);
+                $A = DB_fetchArray ($result);
+
+                if ($_BAN_CONF['gus_hits_num'] <= $A['count_ip']) {
+                    $ans = 1;
+                    // IP has visited to many times in a given time so ban
+                    DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('REMOTE_ADDR', '{$REMOTE_ADDR}', {$_BAN_CONF['gus_hits_status']}, '{$LANG_BAN00['gus_hits_note']}')",1);
+                }
+            }
+        }
+        
+    }
+    
+    // TTL
+    if ($_BAN_CONF['ban_auto']) {
+        // Figure out if we need to do ttl check. Check last time it was run.
+        $new_date = $dateinsec - ($_BAN_CONF['ban_ttl_check'] * 60);
+        $new_date = date('Y-m-d H:i:s', $new_date);
+        
+        if (DB_getItem($_TABLES['vars'], 'value', "name='ban_last_ttl_check'") <= $new_date) {
+            //Set latest TTL check
+            DB_query("UPDATE {$_TABLES['vars']} SET value='{$current_date}' WHERE name='ban_last_ttl_check'");        
+        
+            // Do 3 TTL checks
+            for ($i = 1; $i < 4; $i++) {
+                switch($i) {
+                    case 1:    
+                        $new_date = $dateinsec - ($_BAN_CONF['ttl_short'] * 60);
+                        $status = CONST_BAN_STATUS_TTL_SHORT;
+                        break;
+                    case 2:
+                        $new_date = $dateinsec - ($_BAN_CONF['ttl_meduium'] * 60);
+                        $status = CONST_BAN_STATUS_TTL_MEDIUM;
+                        break;
+                    case 3:   
+                        $new_date = $dateinsec - ($_BAN_CONF['ttl_long'] * 60);
+                        $status = CONST_BAN_STATUS_TTL_LONG;
+                        break;
+                }
+                $new_date = date('Y-m-d H:i:s', $new_date);
+                
+                $sql = "DELETE FROM {$_TABLES['ban']} WHERE status = $status AND created <= '$new_date'";
+                DB_query($sql);
+            }            
+        }
+    }
+}
+
+/**
+ * Method to match an IP address against a CIDR
+ *
+ * @param   string  $iptocheck  IP address to check
+ * @param   string  $CIDR       IP address range to check against
+ * @return  boolean             true if IP falls into the CIDR, else false
+ * @access  private
+ * @todo    CIDR support for IPv6 addresses
+ *
+ * Original author: Ian B, taken from
+ * @link http://www.php.net/manual/en/function.ip2long.php#71939
+ *
+ */
+function BAN_matchCIDR($iptocheck, $CIDR)
+{
+    // not for IPv6 addresses
+    if (strpos($iptocheck, ':') !== false) {
+        return false;
+    }
+
+    // get the base and the bits from the ban in the database
+    list($base, $bits) = explode('/', $CIDR);
+
+    // now split it up into its classes
+    $classes = explode('.', $base);
+    $elements = count($classes);
+    if ($elements < 4) {
+        for ($i = $elements; $i < 4; $i++) {
+            $classes[$i] = 0;
+        }
+    }
+    list($a, $b, $c, $d) = $classes;
+
+    // now do some bit shifting/switching to convert to ints
+    $i = ($a << 24) + ($b << 16) + ($c << 8) + $d;
+    $mask = $bits == 0 ? 0 : (~0 << (32 - $bits));
+
+    // here's our lowest int
+    $low = $i & $mask;
+
+    // here's our highest int
+    $high = $i | (~$mask & 0xFFFFFFFF);
+
+    // now split the ip we're checking against up into classes
+    $ex = explode('.', $iptocheck);
+
+    if (count($ex) == 4) {
+        // now convert the ip we're checking against to an int
+        $check = ($ex[0] << 24) + ($ex[1] << 16) + ($ex[2] << 8) + $ex[3];
+
+        // if the ip is within the range, including
+        // highest/lowest values, then it's witin the CIDR range
+        if (($check >= $low) && ($check <= $high)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Method to match an IP address against an address range
+ *
+ * @param   string  $ip     IP address to check
+ * @param   string  $range  IP address range to check against
+ * @return  boolean         true if IP falls into the IP range, else false
+ * @access  private
+ *
+ * Original authors: dh06 and Stephane, taken from
+ * @link http://www.php.net/manual/en/function.ip2long.php#70707
+ *
+ */
+function BAN_matchRange($ip, $range)
+{
+    // not for IPv6 addresses
+    if (strpos($ip, ':') !== false) {
+        return false;
+    }
+
+    $d = strpos($range, '-');
+    if ($d !== false) {
+       $from = ip2long(trim(substr($range, 0, $d)));
+       $to = ip2long(trim(substr($range, $d + 1)));
+
+       $ip = ip2long($ip);
+       return (($ip >= $from) && ($ip <= $to));
+    }
+
+    return false;
 }
 
 /**
@@ -191,112 +594,78 @@ function BAN_log( $logentry )
               
     return $retval;
 }
-                                        
 
-/**
-* Removes the datastructures for this plugin from the Geeklog database
-*
-* This may get called by the install routine to undue anything done to this
-* point.  To do that, $steps will have a list of steps to undo
-*
-* @steps   Array    Holds all the steps that have been completed by the install
-*
-*/  
-function plugin_uninstall_ban($steps = '')
+function plugin_geticon_ban ()
 {
-    global $_TABLES;
+    global $_CONF, $LANG_BAN00;
 
-    $FEATURES = array ( 'ban.admin');
-    $TABLES = array ('ban');
-    
-    // Unregister the plugin with Geeklog
-    COM_errorLog('Attempting to unregister the Ban plugin from Geeklog',1);
-    DB_query("DELETE FROM {$_TABLES['plugins']} WHERE pi_name = 'ban'",1);
+    return $_CONF['site_admin_url'] . '/plugins/ban/images/ban.png';
+}
 
-    // Drop ban tables
-    foreach($TABLES as $table) {
-        $t = $_TABLES["$table"];
-        COM_errorLog("Removing Table $t",1);
-        DB_query("DROP TABLE $t",1);
+function plugin_getListField_ban($fieldname, $fieldvalue, $A, $icon_arr) {
+    global $_CONF, $_AUTO_CONF, $LANG_ACCESS, $LANG_BAN00;
+
+    switch($fieldname) {
+        case "edit":
+            if (SEC_hasRights('ban.admin')) {
+                $retval = "<a href=\"{$_CONF['site_admin_url']}/plugins/ban/index.php?mode=edit&amp;id={$A['id']}\">{$icon_arr['edit']}</a>";
+            }
+            break;
+        case "note":
+            $retval = '';
+            if (trim($A['note']) != '') {
+                $retval = COM_getTooltip('', stripslashes($A['note']), '', $LANG_BAN00['note'],'information');
+            }
+            break;
+        case "type":
+            $retval = $A['bantype'];
+            break;
+        case "status":
+            switch ($A['status']) {
+                case CONST_BAN_STATUS_TTL_SHORT:
+                    $retval = $LANG_BAN00['status_ttl_short'];
+                    break;
+                    
+                case CONST_BAN_STATUS_TTL_MEDIUM:
+                    $retval = $LANG_BAN00['status_ttl_medium'];
+                    break;
+                    
+                case CONST_BAN_STATUS_TTL_LONG:
+                    $retval = $LANG_BAN00['status_ttl_long'];
+                    break;
+                    
+                case CONST_BAN_STATUS_WHITE:
+                    $retval = $LANG_BAN00['status_white'];
+                    break;
+                    
+                default:
+                    $retval = $LANG_BAN00['status_normal'];
+                    
+            }
+            break;
+        default:
+            $retval = $fieldvalue;
+            break;
     }
-
-    // Remove Security for this plugin
-    $grp_id = DB_getItem($_TABLES['vars'], 'value', "name = 'ban_group_id'");
-    
-
-    DB_query("DELETE FROM {$_TABLES['groups']} WHERE grp_id = $grp_id",1);
-    DB_query("DELETE FROM {$_TABLES['vars']} WHERE name = 'ban_group_id'");
-    COM_errorLog("Removing root users from admin of ban");
-    DB_query("DELETE FROM {$_TABLES['group_assignments']} WHERE ug_main_grp_id = $grp_id",1);
-    COM_errorLog("Removing group id in vars");
-    DB_query("DELETE FROM {$_TABLES['vars']} WHERE value = $grp_id",1);
-    
-    
-    foreach ($FEATURES as $feature) {
-        COM_errorLog("Removing $feature feature and rights to it",1);
-        $feat_id = DB_getItem($_TABLES['features'], 'ft_id', "ft_name = '$feature'");
-        DB_query("DELETE FROM {$_TABLES['access']} WHERE acc_ft_id = $feat_id",1);
-        DB_query("DELETE FROM {$_TABLES['features']} WHERE ft_id = $feat_id",1);
-    }
-    COM_errorLog("Removing the {$_TABLES['vars']} reference to Ban");
-    DB_query("DELETE FROM {$_TABLES['vars']} WHERE value = 'ban'",1);
-    COM_errorLog('...success',1);
+    return $retval;
 }
 
-/**
-* Called by the plugin Editor to display the current plugin code version
-* This may be different then the version installed and registered currently.
-* If newer then you may want to run the update
-*/
-function plugin_chkVersion_ban()
-{
-    global $_BAN_CONF;
+// *FUNCTION
+// ipcheckdb3($funcIP, $zbdbfile)
+// check database $zbdbfile for existance of $funcIP, return count.
+// *** IP MUST PRECEEDED AND FOLLOWED BY A COMMA! ***
 
-    return $_BAN_CONF['version'];
+function ipcheck_stopforumspam($funcIP, $zbdbfile) {
+    /// Load Database
+    $zbaaa = "";
+    if (file_exists($zbdbfile)){$zbaaa = @file_get_contents($zbdbfile);} //0.4.9 HARDENING
+    /// Count Matches
+    $funcIP = "," . $funcIP . "," ;
+    $zbaab = 0 ;
+    $zbaab = @substr_count($zbaaa,$funcIP);
+    unset($zbaaa);
+    /// return count
+    return $zbaab;
 }
 
-/**
-* Upgrade to current version of rating.
-*
-*
-*/
-function plugin_upgrade_ban()
-{
-	global $_TABLES;
-	
-	$res = DB_query( "SELECT pi_version FROM {$_TABLES['plugins']} WHERE pi_name = 'ban'" );
-	$row = DB_fetchArray( $res, false );
-	
-	COM_errorLog( "Updating Ban plugin from v" . $row['pi_version'] . ' to v' . plugin_chkVersion_ban(), 1 );
-	
-	return ban_doUpgrades( $row['pi_version'] );
-}
-
-function ban_doUpgrades( $current_rating_version )
-{
-	global $_TABLES, $_CONF, $_DB;
-
-	$_DB->setDisplayError( true );
-
-	$done = false;
-
-	while ( $done == false )
-	{
-		switch ( $current_rating_version )
-		{
-			case '1.0':
-			case '1.0.1':
-			case '1.0.2':
-				$current_rating_version = '1.0.3';
-				break;
-			default:
-				$done = true;
-				break;
-		}
-	}
-
-	DB_query( "UPDATE {$_TABLES['plugins']} SET pi_version = '{$current_rating_version}' WHERE pi_name = 'ban'" );
-	
-	return true;
-}
 ?>

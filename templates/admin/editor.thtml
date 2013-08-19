@@ -1,0 +1,17 @@
+{start_block_editor}
+<form method="POST" action="{site_admin_url}/plugins/ban/index.php">
+    <table width="100%">
+        <tr><td>{lang_id}:</td><td>{id}</td></tr>
+        <tr><td>{lang_type}:</td><td><select name="type">{options_type}</select>&nbsp;&nbsp;{lang_status}:&nbsp;<select name="status">{options_status}</select>&nbsp;&nbsp;{lang_created}:&nbsp;{created}</td></tr>
+        <tr><td>{lang_data}:</td><td><input type="text" name="data" maxlength="255" size="100" value="{data}"></td></tr>
+        <tr><td>{lang_note}:</td><td><input type="text" name="note" maxlength="255" size="100" value="{note}"></td></tr>
+    </table>
+    <p>      
+        <input type="submit" value="{lang_save}" name="mode"> 
+        <input type="submit" value="{lang_cancel}" name="mode"> 
+        {delete_option}
+        <input type="hidden" name="id" value="{id}">
+        <input type="hidden" name="created" value="{created}">
+    </p>    
+</form>
+{end_block}
