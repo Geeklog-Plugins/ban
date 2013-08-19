@@ -1,0 +1,20 @@
+<a href="{site_admin_url}/plugins/ban/index.php"><img src="{site_admin_url}/plugins/ban/ban.gif" border='0'></a>
+&nbsp;&nbsp; <b><font size="4"> {header} </font></b>
+<p align="center"><a href="{site_admin_url}/plugins/ban/logview.php?action=View%20Log%20File&log=ban.log">View Ban Log</a></p>
+<p>{ban_msg}</p>
+<table width="100%">
+<!-- BEGIN IP -->
+<tr><td>{type1}</td><td>{data1}</td></tr>
+<!-- END IP -->
+</table>
+<hr>
+<form method="POST" action="{site_admin_url}/plugins/ban/index.php">
+<table width="100%">
+<tr><td></td><td align="center">{bantype}</td><td align="center">{bandata}</td><td></td></tr>
+<tr><td><input type="submit" value="{ipbtnmsg}" name="action"></td>
+<td align="center"><select name="newtype"><option value="REMOTE_ADDR" SELECTED>REMOTE_ADDR</option><option value="HTTP_REFERER">HTTP_REFERER</option><option value="HTTP_USER_AGENT">HTTP_USER_AGENT</option><option value="SCRIPT_NAME">SCRIPT_NAME</option></select></td>
+<td align="center"><input type=text name="newdata"></td>
+<td><input type="submit" value="{dipbtnmsg}" name="action"></td></tr>
+</table>
+</form>
+<hr>
