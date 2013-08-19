@@ -1,0 +1,54 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<html>
+<head>
+	<title>Geeklog Ban Plugin Install Instructions</title>
+</head>
+
+<body>
+<a href="http://gplugs.sf.net">Geeklog Ban Plugin</a><br>
+1-4-03 <br>
+Tom Willett -- <a href="mailto:twillett@users.sf.net">twillett@users.sf.net</a><br>
+
+<p><strong>INSTALL:</strong></p>
+
+<ol>
+<li>Back up your Geeklog Database.  The Ban plugin adds a table to your Geeklog database.  You can do
+this with the built in admin backup facility.
+</li>
+<li>Take note of the paths for you installation.  Look in the config.php for your site and note the
+values of $_CONF['path'] and $_CONF['path_html'].  $_CONF['path'] is the value for &lt;geeklog_dir&gt;
+and $_CONF['path_html'] is the value for &lt;public_html&gt; in the instructions below.
+</li>
+<li>Uncompress the Ban plugin archive in the &lt;geeklog_dir&gt/plugins directory.
+</li>
+<li>This will create a directory named 'ban'.  Now create two more directories.  For a standard install your admin
+directory is just a subdirectory under &lt;public_html&gt; thus &lt;public_html&gt;/admin.  If this is not
+case for you because you had to move your admin directory then substitute the location of you
+admin directory.  Create the directory called 'ban' at &lt;public_html&gt;/admin/plugins/.
+Thus for a standard install your directory structure will look like this:<br>
+&lt;geeklog&gt;/plugins/ban<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\ - &lt;public_html&gt;/admin/plugins/stats<br>
+</li>
+<li>Now move into the &lt;geeklog&gt;/plugins/ban folder.
+</li>
+<li>Move the contents of the 'admin' folder inside &lt;geeklog&gt;/plugins/ban to your
+&lt;public_html&gt;/admin/plugins/ban/ directory.
+</li>
+<li>Log in to your Geeklog site as a root user.
+</li>
+<li>Go to http://yourdomain.com/admin/plugins/ban/install.php
+</li>
+<li>Click on the install button.
+</li>
+<li>You should receive a message that the installation was successful. Clicking on the Ban Icon will
+take you to the admin page.
+</li>
+<li>If the install encounters an error, then the installation will be uninstalled automatically.  If the
+installation fails, check your Geeklog error.log for help determining what went wrong.
+</li>
+<li>Once installed you will find links to "Ban" in Admin Only and under the
+Submissions moderation page.
+</li></ol>
+</body>
+</html>
