@@ -292,7 +292,7 @@ function BAN_check()
     $current_date = date("Y-m-d H:i:s");
     $dateinsec = strtotime($current_date);    
     
-    $ans = 0; // flag for if anything is tripped
+    $ans = 0; // flag for if anything is tripped (0 = not banned, 1 = banned, 2 = white) 
 
     // Check our own Ban table
     $result = DB_Query("SELECT bantype, data, status FROM {$_TABLES['ban']} ORDER BY status ASC",1);
@@ -323,20 +323,19 @@ function BAN_check()
         }
 
         if ($matches) {
-            $ans = 1; // quit on first positive match
-            
+            // quit on first positive match2
             if ($status == CONST_BAN_STATUS_WHITE) {
-               break;
+                $ans = 2; // White Status
+                
+                break;
             } else {
+                $ans = 1; 
+                
                 if ($_BAN_CONF['logging']) {
                     BAN_Log('Access Banned because ' . $$A['bantype'] . " matches {$A['data']}");
                 }
-                if ($_BAN_CONF['page'] != '') {
-                    echo COM_refresh($_BAN_page);
-                    die();
-                } else {
-                    die();
-                }
+                
+                break;
             }
         }
     }
@@ -347,6 +346,8 @@ function BAN_check()
         $db_location = $_CONF['path'] . 'plugins/ban/files/bannedips.csv';
         $banned_ip_count = ipcheck_stopforumspam($REMOTE_ADDR, $db_location);
         if ($banned_ip_count >= 1){
+            $ans = 1; 
+            
             // We know ip not on white list since it did not trip above
             if ($_BAN_CONF['logging']) {
                 BAN_Log("Access Banned because $REMOTE_ADDR matches Stop Forum Spam database");
@@ -388,8 +389,12 @@ function BAN_check()
         
                         if ($_BAN_CONF['gus_referrer_num'] <= $nrows) {
                             $ans = 1;
-                            // IP has to many user agents in a given time so ban
+                            // IP has to many Referrers in a given time so ban
                             DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('REMOTE_ADDR', '{$REMOTE_ADDR}', {$_BAN_CONF['gus_referrer_status']}, '{$LANG_BAN00['gus_referrer_note']}')",1);
+
+                            if ($_BAN_CONF['logging']) {
+                                BAN_Log("Access Banned because $REMOTE_ADDR has to many referrers in a given time. Added to Ban database.");
+                            }                            
                             
                             break;
                         }
@@ -416,6 +421,11 @@ function BAN_check()
                     $ans = 1;
                     // IP has to many user agents in a given time so ban
                     DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('REMOTE_ADDR', '{$REMOTE_ADDR}', {$_BAN_CONF['gus_user_agent_status']}, '{$LANG_BAN00['gus_user_agent_note']}')",1);
+                    
+                    if ($_BAN_CONF['logging']) {
+                        BAN_Log("Access Banned because $REMOTE_ADDR has to many user agents in a given time. Added to Ban database.");
+                    }                            
+                    
                 }
                 
             }
@@ -437,14 +447,19 @@ function BAN_check()
                     $ans = 1;
                     // IP has visited to many times in a given time so ban
                     DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('REMOTE_ADDR', '{$REMOTE_ADDR}', {$_BAN_CONF['gus_hits_status']}, '{$LANG_BAN00['gus_hits_note']}')",1);
+                    
+                    if ($_BAN_CONF['logging']) {
+                        BAN_Log("Access Banned because $REMOTE_ADDR has to many hits in a given time. Added to Ban database.");
+                    }                      
                 }
             }
+            
         }
         
     }
     
     // TTL
-    if ($_BAN_CONF['ban_auto']) {
+    if ($_BAN_CONF['ban_auto'] AND $ans == 0) {
         // Figure out if we need to do ttl check. Check last time it was run.
         $new_date = $dateinsec - ($_BAN_CONF['ban_ttl_check'] * 60);
         $new_date = date('Y-m-d H:i:s', $new_date);
@@ -474,6 +489,15 @@ function BAN_check()
                 $sql = "DELETE FROM {$_TABLES['ban']} WHERE status = $status AND created <= '$new_date'";
                 DB_query($sql);
             }            
+        }
+    }
+    
+    if ($ans == 1) { // Something has triggered the ban so... (0 = not banned, 1 = banned, 2 = white)   
+        if ($_BAN_CONF['page'] != '') {
+            echo COM_refresh($_BAN_page);
+            die();
+        } else {
+            die();
         }
     }
 }
