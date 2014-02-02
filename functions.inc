@@ -239,7 +239,7 @@ function plugin_cclabel_ban()
     if ((SEC_inGroup('Root')) || (SEC_hasRights('ban.admin'))) {
         return array($LANG_BAN00['ban'],
                 $_CONF['site_admin_url'] . '/plugins/ban/index.php',
-                plugin_geticon_ban());
+                plugin_geticon_ban(), 'tools');
     }
     
     return false;
@@ -258,7 +258,7 @@ function plugin_getadminoption_ban()
         $A = DB_fetchArray ($result);
         $total_bans = $A['cnt'];
         
-        return array($LANG_BAN00['ban'],$_CONF['site_admin_url'] . '/plugins/ban/index.php',$total_bans);
+        return array($LANG_BAN00['ban'],$_CONF['site_admin_url'] . '/plugins/ban/index.php',$total_bans, 'tools');
     }
 }
 
