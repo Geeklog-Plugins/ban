@@ -185,8 +185,6 @@ function ban_list()
     $menu_arr = array (
                     array('url' => $_CONF['site_admin_url'] . '/plugins/ban/index.php?mode=edit',
                           'text' => $LANG_ADMIN['create_new']),
-                    array('url' => $_CONF['site_admin_url'] . '/plugins/ban/logview.php?action=View Log File&log=ban.log',
-                          'text' => $LANG_BAN00['log_viewer']),
                     array('url' => $_CONF['site_admin_url'],
                           'text' => $LANG_ADMIN['admin_home'])
     );

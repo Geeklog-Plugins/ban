@@ -64,6 +64,7 @@ $LANG_BAN00 = array (
     'gus_user_agent_note'   => "GUS User Agents exceeded ({$_BAN_CONF['gus_user_agent_num']}) for ip within the last {$_BAN_CONF['gus_user_agent_time']} seconds.",
     'gus_hits_note'         => "GUS Hits exceeded ({$_BAN_CONF['gus_hits_num']}) for ip within the last {$_BAN_CONF['gus_hits_time']} seconds.",
     'gus_referrer_note'     => "GUS referrer exceeded ({$_BAN_CONF['gus_referrer_num']}) matches for ip within the last {$_BAN_CONF['gus_referrer_time']} seconds.",
+    'gus_url_note'          => "GUS page and query string requests exceeded ({$_BAN_CONF['gus_url_num']}) matches for ip within the last {$_BAN_CONF['gus_url_time']} seconds.",
     
     'stopforumspam_note'   => "Your Stop Forum Spam database is older than {$_BAN_CONF['stopforumspam_file_date']} days. Please download a new database at the <a href='http://www.stopforumspam.com/downloads/' target='_blank'>Stop Forum Spam</a> website.",
     

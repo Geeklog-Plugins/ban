@@ -374,14 +374,12 @@ function BAN_check()
                 
                 foreach ($_BAN_CONF['gus_referrer_match'] as $match) {
                     if (strlen($match) > $_BAN_CONF['gus_referrer_min']) {
-                        // Based on the gus function GUS_getEncodedURL to convert urls for the database (since using entities)
-                        $match = urlencode(addslashes($match));
-                        $match = str_replace('%', '\%', $match);
+                        $comparison = ' LIKE \'' . BAN_getEncodedURL($match) . '%\' ';
                         
                         $sql = "SELECT ip 
                             FROM $gus_userstats_table  
                             WHERE ip = '{$REMOTE_ADDR}'
-                            AND referer LIKE '%$match%'
+                            AND referer $comparison
                             AND  DATE_ADD(`date`, INTERVAL `time` HOUR_SECOND) >= '$new_date'";
 
                         $result = DB_Query($sql);
@@ -402,6 +400,55 @@ function BAN_check()
                 }
                 
             }
+
+            // Check: page and query string in a given time by IP. If they match the text then ban
+            if ($_BAN_CONF['gus_url'] AND $ans == 0) {
+                $new_date = $dateinsec - $_BAN_CONF['gus_url_time'];
+                $new_date = date('Y-m-d H:i:s', $new_date);
+                
+                // Loop through both arrays
+                for ($counter = 1; $counter <= 2; $counter++) {
+                    if ($counter == 1) {
+                        $url_array = $_BAN_CONF['gus_urls_exact'];
+                    } else {
+                        $url_array = $_BAN_CONF['gus_urls_like'];
+                    }
+                    
+                    foreach ($url_array as $url) {
+                        if (!empty($url)) {
+                            if ($counter == 1) {
+                                $comparison = " = '" . urlencode(addslashes($url)) . "'";
+                            } else {
+                                $comparison = ' LIKE \'' . BAN_getEncodedURL($url) . '%\' ';
+                            }
+                            
+                            $sql = "SELECT ip 
+                                FROM $gus_userstats_table  
+                                WHERE ip = '{$REMOTE_ADDR}'
+                                AND CONCAT(page, CONCAT('%3F', query_string)) $comparison 
+                                AND page <> '' 
+                                AND  DATE_ADD(`date`, INTERVAL `time` HOUR_SECOND) >= '$new_date'";
+
+                            $result = DB_Query($sql);
+                            $nrows = DB_numRows($result);
+            
+                            if ($_BAN_CONF['gus_url_num'] <= $nrows) {
+                                $ans = 1;
+                                // IP has to many Referrers in a given time so ban
+                                DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('REMOTE_ADDR', '{$REMOTE_ADDR}', {$_BAN_CONF['gus_url_status']}, '{$LANG_BAN00['gus_url_note']}')",1);
+        
+                                if ($_BAN_CONF['logging']) {
+                                    BAN_Log("Access Banned because $REMOTE_ADDR has requested to many times a matching page with query string in a given time. Added to Ban database.");
+                                }                            
+                                
+                                $counter = 3; // breack out of the array counter as well
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            
             
             // Check: Number of user agents in a given time by IP
             if ($_BAN_CONF['gus_user_agent'] AND $ans == 0) {
@@ -690,6 +737,17 @@ function ipcheck_stopforumspam($funcIP, $zbdbfile) {
     unset($zbaaa);
     /// return count
     return $zbaab;
+}
+
+// Based on the gus function GUS_getEncodedURL to convert urls for the database (since using entities)
+// Because the referrers are stored encoded, we need our URLs to look similar for SQL comparison
+//	- make it look like the referrers by encoding it
+//	- escape '%' for the LIKE clause
+function BAN_getEncodedURL($url) {
+	$encoded_site_url = urlencode(addslashes($url));
+	$encoded_site_url = str_replace('%', '\%', $encoded_site_url);
+	
+	return $encoded_site_url;
 }
 
 ?>
