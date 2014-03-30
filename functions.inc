@@ -331,7 +331,7 @@ function BAN_check()
             } else {
                 $ans = 1; 
                 
-                if ($_BAN_CONF['logging']) {
+                if ($_BAN_CONF['logging_db']) {
                     BAN_Log('Access Banned because ' . $$A['bantype'] . " matches {$A['data']}");
                 }
                 
@@ -349,7 +349,7 @@ function BAN_check()
             $ans = 1; 
             
             // We know ip not on white list since it did not trip above
-            if ($_BAN_CONF['logging']) {
+            if ($_BAN_CONF['logging_sfs']) {
                 BAN_Log("Access Banned because $REMOTE_ADDR matches Stop Forum Spam database");
             }
         }
@@ -390,8 +390,9 @@ function BAN_check()
                             // IP has to many Referrers in a given time so ban
                             DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('REMOTE_ADDR', '{$REMOTE_ADDR}', {$_BAN_CONF['gus_referrer_status']}, '{$LANG_BAN00['gus_referrer_note']}')",1);
 
-                            if ($_BAN_CONF['logging']) {
-                                BAN_Log("Access Banned because $REMOTE_ADDR has to many referrers in a given time. Added to Ban database.");
+                            if ($_BAN_CONF['logging_auto']) {
+                                // BAN_Log("Access Banned because $REMOTE_ADDR has to many referrers in a given time. Added to Ban database.");
+                                BAN_Log("Access Banned because $REMOTE_ADDR has $nrows referrers that match $match in the last {$_BAN_CONF['gus_referrer_time']} seconds. Added to Ban database.");
                             }                            
                             
                             break;
@@ -437,8 +438,9 @@ function BAN_check()
                                 // IP has to many Referrers in a given time so ban
                                 DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('REMOTE_ADDR', '{$REMOTE_ADDR}', {$_BAN_CONF['gus_url_status']}, '{$LANG_BAN00['gus_url_note']}')",1);
         
-                                if ($_BAN_CONF['logging']) {
-                                    BAN_Log("Access Banned because $REMOTE_ADDR has requested to many times a matching page with query string in a given time. Added to Ban database.");
+                                if ($_BAN_CONF['logging_auto']) {
+                                    // BAN_Log("Access Banned because $REMOTE_ADDR has requested to many times a matching page with query string in a given time. Added to Ban database.");
+                                    BAN_Log("Access Banned because $REMOTE_ADDR has requested $url $nrows times in the last {$_BAN_CONF['gus_url_time']} seconds. Added to Ban database.");
                                 }                            
                                 
                                 $counter = 3; // breack out of the array counter as well
@@ -469,8 +471,9 @@ function BAN_check()
                     // IP has to many user agents in a given time so ban
                     DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('REMOTE_ADDR', '{$REMOTE_ADDR}', {$_BAN_CONF['gus_user_agent_status']}, '{$LANG_BAN00['gus_user_agent_note']}')",1);
                     
-                    if ($_BAN_CONF['logging']) {
-                        BAN_Log("Access Banned because $REMOTE_ADDR has to many user agents in a given time. Added to Ban database.");
+                    if ($_BAN_CONF['logging_auto']) {
+                        // BAN_Log("Access Banned because $REMOTE_ADDR has to many user agents in a given time. Added to Ban database.");
+                        BAN_Log("Access Banned because $REMOTE_ADDR has $nrows user agents in the last {$_BAN_CONF['gus_user_agent_time']} seconds. Added to Ban database.");
                     }                            
                     
                 }
@@ -495,8 +498,9 @@ function BAN_check()
                     // IP has visited to many times in a given time so ban
                     DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('REMOTE_ADDR', '{$REMOTE_ADDR}', {$_BAN_CONF['gus_hits_status']}, '{$LANG_BAN00['gus_hits_note']}')",1);
                     
-                    if ($_BAN_CONF['logging']) {
-                        BAN_Log("Access Banned because $REMOTE_ADDR has to many hits in a given time. Added to Ban database.");
+                    if ($_BAN_CONF['logging_auto']) {
+                        // BAN_Log("Access Banned because $REMOTE_ADDR has to many hits in a given time. Added to Ban database.");
+                        BAN_Log("Access Banned because $REMOTE_ADDR has {$A['count_ip']} hits in the last {$_BAN_CONF['gus_hits_time']} seconds. Added to Ban database.");
                     }                      
                 }
             }
@@ -651,19 +655,19 @@ function BAN_matchRange($ip, $range)
 
 function BAN_log( $logentry )
 {
-    global $_CONF, $LANG01;
+    global $_CONF, $LANG01, $_BAN_CONF;
     
-    $timestamp = strftime( "%c" );
-    $logfile = $_CONF['path_log'] . 'ban.log';
-           
-    if( !$file = fopen( $logfile, a ))
-    {
-        COM_errorLog($LANG01[33] . $logfile . ' (' . $timestamp . ')',1);
-    }
+    if ($_BAN_CONF['logging']) { // Double check if enabled
+        $timestamp = strftime( "%c" );
+        $logfile = $_CONF['path_log'] . 'ban.log';
                
-    fputs( $file, "$timestamp - $logentry \n" );
-              
-    return $retval;
+        if( !$file = fopen( $logfile, a ))
+        {
+            COM_errorLog($LANG01[33] . $logfile . ' (' . $timestamp . ')',1);
+        }
+                   
+        fputs( $file, "$timestamp - $logentry \n" );
+    }
 }
 
 function plugin_geticon_ban ()

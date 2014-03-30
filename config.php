@@ -39,7 +39,10 @@ define("CONST_BAN_STATUS_TTL_LONG", 4);
 $_BAN_CONF['gus_userstats_table']  = $_DB_table_prefix . 'gus_userstats';	
 
 // Set this flag to true to enable logging of banned attempted accesses
-$_BAN_CONF['logging'] = true;
+$_BAN_CONF['logging'] = true; // master switch for all logging
+$_BAN_CONF['logging_db'] = true; // log banned access based on data from database
+$_BAN_CONF['logging_sfs'] = true; // log banned access based on stop forum spam database
+$_BAN_CONF['logging_auto'] = true; // log new auto banned ips that match rules
 
 // Set this variable to the filename to show banned users/bots or set to '' to show a blank page.
 $_BAN_CONF['page'] = '';
@@ -82,7 +85,7 @@ $_BAN_CONF['gus_referrer_status'] = CONST_BAN_STATUS_TTL_MEDIUM;
 // Auto Ban - URL - Ban IP that request matching URL hit X times in X number of seconds. Based on GUS data.
 $_BAN_CONF['gus_url'] = true;
 // Example array value would be "staticpages/index.php?page=staticpage_id"
-$_BAN_CONF['gus_urls_exact'] = array(""); // Url exactly matches this (no need to add domain name)
+$_BAN_CONF['gus_urls_exact'] = array("search.php?query=search&type=all&keytype=-1%27&mode=search"); // Url exactly matches this (no need to add domain name)
 $_BAN_CONF['gus_urls_like'] = array(""); // Like match on end of query string (no need to add domain name)
 $_BAN_CONF['gus_url_num'] = 8;
 $_BAN_CONF['gus_url_time'] = 3600; // Number of SECONDS to check back (3600 = 1 hour, 86400 = 1 day)
