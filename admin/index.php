@@ -245,6 +245,7 @@ function ban_editor($id, $mode = '', $error = false)
 * Saves a ban to the database
 *
 */
+// If making changes here make sure to change BAN_for_plugins_ban_ip in function.inc if needed
 function ban_save($id, $type, $status, $data, $note)
 {
     global $_CONF, $LANG_BAN00, $_TABLES;
@@ -306,6 +307,7 @@ function batchdeleteban()
     return $msg;
 }
 
+// If making changes here make sure to change BAN_for_plugins_ban_ip in function.inc if needed 
 function ban_delete($id, $return_flag = 0)
 {
     global $_CONF, $_TABLES, $_USER;
