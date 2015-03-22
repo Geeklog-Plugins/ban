@@ -61,6 +61,8 @@ $LANG_BAN00 = array (
     'status_ttl_long'       => 'TTL Long',
     'status_white'          => 'White',
     
+    'ban_plugin_note'		=> 'Banned by Plugin %s. ', 
+    
     'gus_user_agent_note'   => "GUS User Agents exceeded ({$_BAN_CONF['gus_user_agent_num']}) for ip within the last {$_BAN_CONF['gus_user_agent_time']} seconds.",
     'gus_hits_note'         => "GUS Hits exceeded ({$_BAN_CONF['gus_hits_num']}) for ip within the last {$_BAN_CONF['gus_hits_time']} seconds.",
     'gus_referrer_note'     => "GUS referrer exceeded ({$_BAN_CONF['gus_referrer_num']}) matches for ip within the last {$_BAN_CONF['gus_referrer_time']} seconds.",

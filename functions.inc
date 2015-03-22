@@ -271,6 +271,80 @@ function plugin_getuseroption_ban()
     return array();
 }
 
+
+//////////////////////////////////////////////////////////////////////////////////
+// BAN API for other Plugins                                                    //
+//////////////////////////////////////////////////////////////////////////////////
+
+function BAN_for_plugins_check_access()
+{
+	$retval = false;
+	
+	if (SEC_hasRights ('ban.admin')) {
+		$retval = true;
+	}
+	
+	return $retval;
+}
+
+function BAN_for_plugins_ban_found($ip)
+{
+	global $_TABLES;
+	
+	$retval = false;
+	
+	if (BAN_for_plugins_check_access()) {
+		if (filter_var($ip, FILTER_VALIDATE_IP) !== false) {
+			$data = $ip;
+			$type = 'REMOTE_ADDR';
+			$status = CONST_BAN_STATUS_NORMAL;		
+			if (DB_count($_TABLES['ban'], array('data', 'bantype', 'status'), array($data, $type, $status)) > 0) {
+				$retval = true;
+			}
+		}
+	}
+	
+	return $retval;
+}
+
+function BAN_for_plugins_ban_ip($ip, $plugin, $ban = true, $note = '')
+{
+    global $_PLUGINS, $LANG_BAN00, $_TABLES;
+
+    $retval = false;
+    
+    if (BAN_for_plugins_check_access()) {
+		if (in_array($plugin, $_PLUGINS)) {
+			if (filter_var($ip, FILTER_VALIDATE_IP) !== false) {
+				$data = $ip;
+				$type = 'REMOTE_ADDR';
+				$status = CONST_BAN_STATUS_NORMAL;
+				
+				if ($ban) {
+					$note = sprintf($LANG_BAN00['ban_plugin_note'], $plugin) . $note;
+					// Clean up the text
+					$note = strip_tags($note);
+					$note = addslashes($note);
+					
+					DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('$type', '$data', $status, '$note')",1);
+					
+					$retval = true;
+				} else {
+					
+					if (DB_count($_TABLES['ban'], array('data', 'bantype', 'status'), array($data, $type, $status)) > 0) {
+						DB_query( "DELETE FROM {$_TABLES['ban']} WHERE bantype='$type' AND data='$data' AND status = $status LIMIT 1", 1 );
+						
+						$retval = true;
+					}
+				}
+			}
+		}
+	}
+    
+    return $retval;
+	
+}
+
 //////////////////////////////////////////////////////////////////////////////////
 // BAN Functions                                                                //
 //////////////////////////////////////////////////////////////////////////////////
