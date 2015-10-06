@@ -46,7 +46,9 @@ $LANG_BAN00 = array (
     'ttl'           => 'Time To Live',
     'note'          => 'Note',
     'desc'          => 'Ban Bad IPs and Bots from your website.',
-    'instructions'  => 'You can ban bots and people from you website.  You can ban by IP (use REMOTE_ADDR), referer (use HTTP_REFERER), user agent (use HTTP_USER_AGENT) or page (use SCRIPT_NAME).  To match patterns use case insensitive regular expressions (preg_match). With REMOTE_ADDR you may also add IP address ranges, either in CIDR notation or as simple from-to ranges. See the Ban Plugin <a href="' . $_CONF['site_admin_url'] . '/plugins/ban/readme.html">Read Me</a> for more information.<br><br>Here is what you have banned now:',
+    'instructions'  => 'You can ban bots and people from you website.  You can ban by IP (use REMOTE_ADDR), referer (use HTTP_REFERER), user agent (use HTTP_USER_AGENT) or page (use SCRIPT_NAME).  To match patterns use case insensitive regular expressions (preg_match). With REMOTE_ADDR you may also add IP address ranges, either in CIDR notation or as simple from-to ranges. See the Ban Plugin <a href="' . $_CONF['site_admin_url'] . '/plugins/ban/readme.html" target="_blank">Read Me</a> for more information.<br' . XHTML . '><br' . XHTML . '>If you are using Auto Ban with the GUS plugin please make sure the plugin load order is set so the GUS plugin is loaded before the Ban plugin.',
+    'instructions_sfs'  => '<br' . XHTML . '><br' . XHTML . '>The last time your Stop Forum Spam (SFS) database was updated, was on: %s',
+    'not_available' => 'Not Available',
     'save'          => 'Save',
     'cancel'        => 'Cancel',
     'delete'        => 'Delete',
@@ -54,6 +56,7 @@ $LANG_BAN00 = array (
     'ban_editor'    => 'Ban Editor',
     'ban_list'      => 'Ban List',
     'log_viewer'    => 'Log Viewer',
+    'download_sfs'  => 'Download SFS Database',
 
     'status_normal'         => 'Normal',
     'status_ttl_short'      => 'TTL Short',
@@ -68,7 +71,7 @@ $LANG_BAN00 = array (
     'gus_referrer_note'     => "GUS referrer exceeded ({$_BAN_CONF['gus_referrer_num']}) matches for ip within the last {$_BAN_CONF['gus_referrer_time']} seconds.",
     'gus_url_note'          => "GUS page and query string requests exceeded ({$_BAN_CONF['gus_url_num']}) matches for ip within the last {$_BAN_CONF['gus_url_time']} seconds.",
     
-    'stopforumspam_note'   => "Your Stop Forum Spam database is older than {$_BAN_CONF['stopforumspam_file_date']} days. Please download a new database at the <a href='http://www.stopforumspam.com/downloads/' target='_blank'>Stop Forum Spam</a> website.",
+    'stopforumspam_note'   => "Your Stop Forum Spam database is older than {$_BAN_CONF['stopforumspam_file_date']} days. Please download a new database at the <a href='http://www.stopforumspam.com/downloads/' target='_blank'>Stop Forum Spam website</a>. To automatically download it now, <a href='/admin/plugins/ban/index.php?mode=sfs_download'>click here</a>. Remember for automatic download to work you need to make sure that your website has write access for the SFS database file.",
     
     'error_editor_no_data'  => 'Your ban must have a type, status and data.',
     'access_denied'         => 'Access Denied',
@@ -81,5 +84,7 @@ $LANG_BAN00 = array (
 $PLG_ban_MESSAGE1 = "Your ban has been saved successfully.";
 $PLG_ban_MESSAGE2 = 'Your ban has been deleted successfully.';
 $PLG_ban_MESSAGE3 = 'Your selected bans have been deleted.';
+$PLG_ban_MESSAGE4 = 'Your Stop Forum Spam database has been updated.';
+$PLG_ban_MESSAGE5 = 'There was a problem downloading or unzipping the Stop Forum Spam database. Depending on your settings you only have a minimum of 1 download attempt every 8 hours.';
 
 ?>

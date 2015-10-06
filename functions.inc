@@ -66,10 +66,34 @@ if (file_exists($langfile)) {
  */
 $_TABLES['ban']  = $_DB_table_prefix . 'ban';	
 
+// Validate config options
+if ($_BAN_CONF['stopforumspam_file_date'] < 1) {
+    $_BAN_CONF['stopforumspam_file_date'] = 7;
+}
+if ($_BAN_CONF['stopforumspam_retry_download'] < 28800) {
+    $_BAN_CONF['stopforumspam_file_date'] = 28800;
+}
+
+// Make sure files match db install before we do ban check
 $installed_version = DB_getItem($_TABLES['plugins'], 'pi_version',
                                 "pi_name = 'ban'");
 $code_version = plugin_chkVersion_ban();
 if ($installed_version == $code_version) {
+    // Check if need to download Stop Forum Spam database
+    if ($_BAN_CONF['stopforumspam'] AND $_BAN_CONF['stopforumspam_auto_download']) {
+            $db_location = $_CONF['path'] . 'plugins/ban/files/' . $_BAN_CONF['stopforumspam_database_name'];  
+            if (file_exists($db_location)) {
+                $stats = stat($db_location);
+                if ($stats[9] > (time() - (86400 * $_BAN_CONF['stopforumspam_file_date']))) {
+                    // db file is less than stop forum spam old date
+                } else {
+                    // Database to old so download
+                    BAN_sfs_download();
+                }
+            }
+    }    
+    
+    // Perform Ban check
     BAN_check();
 }
 
@@ -93,7 +117,7 @@ function plugin_chkVersion_ban()
 }
 
 /**
-* Update the Autotags plugin
+* Update the Ban plugin
 *
 * @return   int     Number of message to display (true = generic success msg)
 *
@@ -181,7 +205,7 @@ function plugin_autouninstall_ban ()
         'features' => array('ban.admin'), 
 //                            'config.autotags.tab_autotag_permissions'),            
         /* give all vars with their name */
-        'vars'=> array('ban_last_ttl_check')
+        'vars'=> array('ban_last_ttl_check', 'ban_last_sfsdownload')
     );
     return $out;
 }
@@ -397,7 +421,7 @@ function BAN_check()
         }
 
         if ($matches) {
-            // quit on first positive match2
+            // quit on first positive match
             if ($status == CONST_BAN_STATUS_WHITE) {
                 $ans = 2; // White Status
                 
@@ -826,6 +850,75 @@ function BAN_getEncodedURL($url) {
 	$encoded_site_url = str_replace('%', '\%', $encoded_site_url);
 	
 	return $encoded_site_url;
+}
+
+// BAN function for download stop forum database
+function BAN_sfs_download()
+{
+    global $_TABLES, $_CONF, $_BAN_CONF;
+    
+    $retval = false;
+    
+    // Check curl installed
+    if (function_exists('curl_version')){
+        // Figure out when last download happened
+        $sfs_last_download_date = DB_getItem($_TABLES['vars'], 'value', "name='ban_last_sfsdownload'"); // put it here to make the check as fast as possible
+        /*
+        $current_date = date("Y-m-d H:i:s"); 
+        
+        $dateinsec = strtotime($current_date);    
+        $new_date = $dateinsec - ($_BAN_CONF['stopforumspam_file_date'] * 60 * 60 * 24);
+        $new_date = date('Y-m-d H:i:s', $new_date);
+        */
+        
+        $now = DateTime::createFromFormat('U.u', microtime(true));
+        $current_date = $now->format("Y-m-d H:i:s.u");        
+        
+        $now->sub(new DateInterval('P' . $_BAN_CONF['stopforumspam_file_date'] . 'D')); // minus number of days sfs database is allowed to be old
+        $new_date = $now->format("Y-m-d H:i:s.u");        
+        
+        if ($sfs_last_download_date <= $new_date) {
+            //Set latest SFS download attempt
+            DB_query("UPDATE {$_TABLES['vars']} SET value='{$current_date}' WHERE name='ban_last_sfsdownload'");          
+        
+            // Download sfs database zip file
+            $destination = $_CONF['path'] . 'plugins/ban/files/';
+            $source = $_BAN_CONF['stopforumspam_database_location'] . $_BAN_CONF['stopforumspam_database_zip_name'];
+            $filename = $_BAN_CONF['stopforumspam_database_zip_name'];
+            
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $source);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            // curl_setopt($ch, CURLOPT_SSLVERSION,3); // Use if file location uses ssl
+            $data = curl_exec ($ch);
+            $error = curl_error($ch); 
+            curl_close ($ch);
+            
+            // Check if error with download via curl
+            if ($error === false) { 
+                COM_errorLog('Ban plugin could not download the Stop Forum Spam database - Curl error: ' . $error, 1);
+            } else {
+                $file = fopen($destination . $filename, "w+");
+                fputs($file, $data);
+                fclose($file);    
+                
+                // Unzip file
+                $zip = new ZipArchive;
+                if ($zip->open($destination . $filename) === TRUE) {
+                    $zip->extractTo($destination);
+                    $zip->close();
+                    
+                    $retval = true;
+                } else {
+                    COM_errorLog('Could not download or unzip Stop Forum Spam database file.',1);
+                }
+            }
+        }
+    } else {
+        COM_errorLog('Ban plugin could not download the Stop Forum Spam database file because the curl PHP extension is missing.',1);
+    }   
+    
+    return $retval;
 }
 
 ?>

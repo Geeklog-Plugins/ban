@@ -49,7 +49,12 @@ $_BAN_CONF['page'] = '';
 
 // Ban IP by using stopforumspam banned ips list
 $_BAN_CONF['stopforumspam'] = true;
-$_BAN_CONF['stopforumspam_file_date'] = 10; // the number of days before the stop forum spam database file is considered old
+$_BAN_CONF['stopforumspam_file_date'] = 7; // the number of days before the stop forum spam database file is considered old. Must be 1 or greater. Default is 7
+$_BAN_CONF['stopforumspam_auto_download'] = true; // Remember your IP is limited to 3 downloads per day. Auto download based on $_BAN_CONF['stopforumspam_file_date']  value
+$_BAN_CONF['stopforumspam_retry_download'] = 28800; // In seconds. Value cannot be lower than 8 hours (28800). 1 Day = 86400 seconds
+$_BAN_CONF['stopforumspam_database_zip_name'] = "bannedips.zip";
+$_BAN_CONF['stopforumspam_database_name'] = "bannedips.csv";
+$_BAN_CONF['stopforumspam_database_location'] = "http://www.stopforumspam.com/downloads/";
 
 // 0 = Disable Time to Live for ban record. Number of MINUTES in a month (1440 = 1 day, 10080 = 1 week, 43829 = 1 month, 525949 = 1 year)
 $_BAN_CONF['ban_ttl_check'] = 1440; // For when to do the next 3 checks. This number should be equal or smaller than ttl_short

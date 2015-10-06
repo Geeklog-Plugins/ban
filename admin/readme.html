@@ -6,33 +6,37 @@
 </head>
 
 <body>
-<a href="http://gplugs.sf.net">Geeklog Ban Plugin.</a><br>
-October 2003<br>
-Tom Willett   <a href="mailto:twillett@users.sourceforge.net">twillett@users.sourceforge.net</a><br>
+<a href="https://github.com/Geeklog-Plugins">Geeklog Ban Plugin.</a><br>
+Original Release Date: October 2003<br>
+Original Author: Tom Willett <a href="mailto:twillett@users.sourceforge.net">twillett@users.sourceforge.net</a><br>
+Current Maintainer: Tom Homer <a href="https://www.geeklog.net/profiles.php?uid=11721" target="_blank">Contact through Geeklog.net</a>, <a href="https://github.com/eSilverStrike" target="_blank">Account on GitHub</a><br>
 
-<p>This plugin is designed for Geeklog 1.3.8. It should work on earlier versions.
-</p>
-<p><strong>FEATURES:
-</strong></p>
+<p>This plugin is designed for Geeklog version 2.1.0 or higher. It can also work with the <a href="https://github.com/Geeklog-Plugins">GUS plugin</a> version 1.7.9 or higher.</p>
+
+<h1>FEATURES:</h1>
+
 <p>The Ban plugin allows you to ban people and bots from your website.  You can ban a bot/user by IP, Referer, 
 User Agent or Script Name.  Case insensitive regular expressions are used to give you great flexibility.  The 
-php eregi function is used to do the matches.
-</p>
+php eregi function is used to do the matches.</p>
+
 <p>Why would you want to ban bots from your website?  There are at least three good reasons.  1) They eat up bandwidth and resources -- 
 I have had bots come to my website and slurp every web page as fast as they can.  Numerous times I have recorded several hundred
 page accesses per minute by one ip or bot.  2)  You might not agree with what the bot is going to do with the information.  Three I ban
 are <a href="http://www.cyveillance.com/">Cyveillance</a>, <a href="http://www.nameprotect.com/">NameProtect</a>, and <a 
 href="http://www.turnitin.com/static/index.html">Turnitin</a>.  If you are not familiar with them check them out.  3)  Privacy concerns
 dictate that I do what I can to ban email harvesters from my site.  All of these reasons and more are the reasons I ban certain bots.</p>
+
 <p>Here are two links out of several that can give more background on the bot issues: 
 <a href="http://diveintomark.org/archives/2003/02/26/how_to_block_spambots_ban_spybots_and_tell_unwanted_robots_to_go_to_hell">
 Mark Pilgrim's write up</a> and <a href="http://www.webmasterworld.com/forum13/687.htm">Webmaster World</a>.  The
 later requires free registration but has a very good discussion and a more extensive block list.  Both of these websites use apache
 rewrite rules to ban bots but the Ban plugin will work anywhere Geeklog will and does not require fiddling with apache.  Both the apache
 rewrite rules and the Ban Plugin use regular expression matches and are thus compatible.</p>
+
 <p>Briefly how the Ban Plugin works is it checks every page access against a list from your database of banned bots/users.  You can identify
 the person/bot to be banned by 4 different criteria:  REMOTE_ADDR (this is the IP of the user/bot), HTTP_REFERER (obvious), HTTP_USER_AGENT 
 (the browser of Agent String), and SCRIPT_NAME (the page being accessed).  Lets give some examples of how to use these.</p>
+
 <p>Say I want to ban the bot/user from IP 192.168.0.2.  I would go to the Ban Admin page and enter REMOTE_ADDR into the 'Ban Type' 
 box and 192.168.0.2 into the 'Data' box.  But wait, this is a regular expression match so to keep from matching 192.168.0.20 etc I would
 need to enter 192.168.0.2$ to tell it that it was the end of the  IP string.  You might also want to add ^ to the beginning to signify
@@ -41,12 +45,16 @@ $ at the end.  If you don't know regular expressions, now would be a good time t
 Here is a good cheat sheet</a> to jog your memory. 
 <br>Here is a more complicated example I use to ban the Cyveillance bot:<br>I set the Ban Type again to REMOTE_ADDR and the data to ^63\.148\.99\.2(2[4-9]|[3-4][0-9]|5[0-5])$ .  
 This tells it to match the range 63.148.99.224 - 63.148.99.255 inclusive.  <p>
+
 <p>Another Example: say I want to ban the bot that has the HTTP_REFERER variable always set to a page that contains iaea.org.  I would set
 Ban Type to HTTP_REFERER and Date to iaea\.org.  I had to escape the period because that is a special character in regexs.</p>
+
 <p>Another Example: I want to ban various email harvesters.  I set Ban Type to HTTP_USER_AGENT and Data to e?mail.?(collector|magnet|reaper|siphon|sweeper|harvest|collect|wolf).  
 To say it simply it would match: email.collector, mail magnet, emailreaper, mailsiphon, etc, etc.</p>
+
 <p>One final usage example:  I want to turn off a page on my website.  I would put SCRIPT_NAME in the Ban Type and the name of the page
 in Data.</p>
+
 <p>Here is the listing of my ban list.  Before you blindly make it your I would invite you to at least look at the two links I gave above.
 Your mileage may vary.</p>
 
@@ -69,14 +77,15 @@ INSERT INTO gl_ban VALUES ('HTTP_USER_AGENT','TurnitinBot');
 <p>Config.php in the plugins/ban/ directory has two variables that control options. 
 </p>
 <ul>
-<li>        $_BAN_log Controls whether bans are logged to <geeklog>/logs/ban.log (same directory where your Geeklog error and access logs are.)
-</li>
-<li>        $_BAN_page Setting this to a page will display that page when the bot/person is banned.  Setting it to '' will just
-display a blank page.  Caution do not set this to one of our Geeklog Pages or a refresh look will occur.  There is a sample 404.html
-page in the package you can use.
-</li></ul><p>Enjoy,</p>
+    <li>$_BAN_log Controls whether bans are logged to <geeklog>/logs/ban.log (same directory where your Geeklog error and access logs are.)</li>
+    <li>$_BAN_page Setting this to a page will display that page when the bot/person is banned.  Setting it to '' will just
+    display a blank page.  Caution do not set this to one of our Geeklog Pages or a refresh look will occur.  There is a sample 404.html
+    page in the package you can use.</li>
+</ul>
 
-Tom<br>
+<p>Enjoy,</p>
+
+<p>Tom</p>
 
 </body>
 </html>

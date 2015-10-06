@@ -165,10 +165,12 @@ function ban_form($A, $error = false)
     return $display;
 }
 
-function ban_list()
+function ban_list($database_age = '')
 {
-    global $_CONF, $_TABLES, $_IMAGE_TYPE, $LANG_ADMIN, $LANG_BAN00;
+    global $_CONF, $_BAN_CONF, $_TABLES, $_IMAGE_TYPE, $LANG_ADMIN, $LANG_BAN00;
+    
     require_once( $_CONF['path_system'] . 'lib-admin.php' );
+    
     $retval = '';
 
     $header_arr = array(      # dislay 'text' and use table field 'field'
@@ -181,18 +183,40 @@ function ban_list()
     );
     $defsort_arr = array('field' => 'bantype', 'direction' => 'asc');
 
-    
-    $menu_arr = array (
-                    array('url' => $_CONF['site_admin_url'] . '/plugins/ban/index.php?mode=edit',
-                          'text' => $LANG_ADMIN['create_new']),
-                    array('url' => $_CONF['site_admin_url'],
-                          'text' => $LANG_ADMIN['admin_home'])
-    );
+    if ($_BAN_CONF['stopforumspam']) {
+        $menu_arr = array (
+                        array('url' => $_CONF['site_admin_url'] . '/plugins/ban/index.php?mode=edit',
+                              'text' => $LANG_ADMIN['create_new']),
+                        array('url' => $_CONF['site_admin_url'] . '/plugins/ban/index.php?mode=sfs_download',
+                              'text' => $LANG_BAN00['download_sfs']),
+                        array('url' => $_CONF['site_admin_url'],
+                              'text' => $LANG_ADMIN['admin_home'])
+        );
+    } else {
+        $menu_arr = array (
+                        array('url' => $_CONF['site_admin_url'] . '/plugins/ban/index.php?mode=edit',
+                              'text' => $LANG_ADMIN['create_new']),
+                        array('url' => $_CONF['site_admin_url'],
+                              'text' => $LANG_ADMIN['admin_home'])
+        );
+    }
 
-    $retval .= COM_startBlock($LANG_BAN00['ban_list'], '',
+    $readme_url = $_CONF['site_admin_url'] . '/plugins/ban/readme.html';
+    
+    $retval .= COM_startBlock($LANG_BAN00['ban_list'], $readme_url,
                                                 COM_getBlockTemplate('_admin_block', 'header'));
     
-    $retval .= ADMIN_createMenu($menu_arr, $LANG_BAN00['instructions'], plugin_geticon_ban());
+    
+    $instructions = $LANG_BAN00['instructions'];
+    if ($_BAN_CONF['stopforumspam']) {
+        if ($database_age == '') {
+            $database_age = $LANG_BAN00['not_available'];
+        } else {
+            $database_age = date("Y-m-d H:i:s", $database_age);
+        }
+        $instructions .= sprintf($LANG_BAN00['instructions_sfs'], $database_age);
+    }
+    $retval .= ADMIN_createMenu($menu_arr, $instructions, plugin_geticon_ban());
 		
     $text_arr = array('has_extras'   => true,
                        'form_url' => $_CONF['site_admin_url'] . "/plugins/ban/index.php");
@@ -366,6 +390,12 @@ if (($mode == $LANG_BAN00['delete']) && !empty ($LANG_BAN00['delete'])) {
 } else if ($mode == 'batchdeleteban') {
     $msg = batchdeleteban();
     $display .= COM_refresh ($_CONF['site_admin_url'] . '/plugins/ban/index.php?msg=3');     
+} else if ($mode == 'sfs_download') {
+    if (BAN_sfs_download()) {
+        $display .= COM_refresh ($_CONF['site_admin_url'] . '/plugins/ban/index.php?msg=4');     
+    } else {
+        $display .= COM_refresh ($_CONF['site_admin_url'] . '/plugins/ban/index.php?msg=5');     
+    }
 } else if ($mode == 'edit') {
     $display .= COM_siteHeader('menu', $LANG_BAN00['ban_editor']);
     $display .= ban_editor($id, $mode);
@@ -387,10 +417,11 @@ if (($mode == $LANG_BAN00['delete']) && !empty ($LANG_BAN00['delete'])) {
     }
     
     if ($_BAN_CONF['stopforumspam']) {
-        $db_location = $_CONF['path'] . 'plugins/ban/files/bannedips.csv';  
+        $db_location = $_CONF['path'] . 'plugins/ban/files/' . $_BAN_CONF['stopforumspam_database_name'];  
         if (file_exists($db_location)) {
             $stats = stat($db_location);
-            if ($stats[9] > (time() - (86400 * $_BAN_CONF['stopforumspam_file_date']))) {
+            $database_age = $stats[9]; 
+            if ($database_age > (time() - (86400 * $_BAN_CONF['stopforumspam_file_date']))) {
                 // db file is less than stop forum spam old date
             } else {
                 //$display .= COM_showMessage ($msg, 'ban');
@@ -399,8 +430,8 @@ if (($mode == $LANG_BAN00['delete']) && !empty ($LANG_BAN00['delete'])) {
         }
     }        
     
-    $display .= ban_list();
-    $display .= COM_siteFooter ();
+    $display .= ban_list($database_age);
+    $display .= COM_siteFooter();
 }
 
 echo $display;

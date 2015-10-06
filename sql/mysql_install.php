@@ -48,4 +48,7 @@ CREATE TABLE {$_TABLES['ban']} (
 // Geeklog variable for date of last ban TTL check
 $_SQL[] = "INSERT INTO {$_TABLES['vars']} (name, value) VALUES ('ban_last_ttl_check','') ";
 
+// Geeklog variable for date of last attempt at a Stop Forum Database download
+$_SQL[] = "INSERT INTO {$_TABLES['vars']} (name, value) VALUES ('ban_last_sfsdownload','') ";
+
 ?>
