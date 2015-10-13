@@ -898,21 +898,27 @@ function BAN_sfs_download()
             if ($error === false) { 
                 COM_errorLog('Ban plugin could not download the Stop Forum Spam database - Curl error: ' . $error, 1);
             } else {
-                $file = fopen($destination . $filename, "w+");
-                fputs($file, $data);
-                fclose($file);    
-                
-                // Unzip file
-                $zip = new ZipArchive;
-                if ($zip->open($destination . $filename) === TRUE) {
-                    $zip->extractTo($destination);
-                    $zip->close();
+                if (is_writable($destination . $filename)) {
+                    $file = fopen($destination . $filename, "w+");
+                    fputs($file, $data);
+                    fclose($file);    
                     
-                    $retval = true;
+                    // Unzip file
+                    $zip = new ZipArchive;
+                    if ($zip->open($destination . $filename) === TRUE) {
+                        $zip->extractTo($destination);
+                        $zip->close();
+                        
+                        $retval = true;
+                    } else {
+                        COM_errorLog('Could not download or unzip Stop Forum Spam database file.',1);
+                    }
                 } else {
-                    COM_errorLog('Could not download or unzip Stop Forum Spam database file.',1);
+                    COM_errorLog("Please check file/directory permissions. Could not write to file: $destination$filename",1);
                 }
             }
+        } else {
+            COM_errorLog("Ban plugin did not download SFS database file since the last download at $sfs_last_download_date is less than the next time is is allowed to download (which is $new_date).",1);
         }
     } else {
         COM_errorLog('Ban plugin could not download the Stop Forum Spam database file because the curl PHP extension is missing.',1);

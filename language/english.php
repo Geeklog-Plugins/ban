@@ -85,6 +85,6 @@ $PLG_ban_MESSAGE1 = "Your ban has been saved successfully.";
 $PLG_ban_MESSAGE2 = 'Your ban has been deleted successfully.';
 $PLG_ban_MESSAGE3 = 'Your selected bans have been deleted.';
 $PLG_ban_MESSAGE4 = 'Your Stop Forum Spam database has been updated.';
-$PLG_ban_MESSAGE5 = 'There was a problem downloading or unzipping the Stop Forum Spam database. Depending on your settings you only have a minimum of 1 download attempt every 8 hours.';
+$PLG_ban_MESSAGE5 = 'There was a problem downloading or unzipping the Stop Forum Spam database. Depending on your settings you only have a minimum of 1 download attempt every 8 hours. Please check your sites error log file for more information.';
 
 ?>
