@@ -21,7 +21,9 @@ Why would you want to ban bots from your website?  There are at least three good
 
 * They eat up bandwidth and resources -- I have had bots come to my website and slurp every web page as fast as they can.  Numerous times I have recorded several hundred page accesses per minute by one ip or bot.  
 * You might not agree with what the bot is going to do with the information.  Three I ban are [Cyveillance] (http://www.cyveillance.com/), [NameProtect] (http://www.nameprotect.com/), and [Turnitin] (http://www.turnitin.com/static/index.html). If you are not familiar with them check them out.  
-* Privacy concerns dictate that I do what I can to ban email harvesters from my site.  All of these reasons and more are the reasons I ban certain bots.
+* Privacy concerns dictate that I do what I can to ban email harvesters from my site.  
+
+All of these reasons and more are the reasons I ban certain bots.
 
 Here are two links out of several that can give more background on the bot issues: 
 
