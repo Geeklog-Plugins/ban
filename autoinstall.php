@@ -52,7 +52,7 @@ function plugin_autoinstall_ban($pi_name)
         'pi_name'         => $pi_name,
         'pi_display_name' => $pi_display_name,
         'pi_version'      => '2.0.0',
-        'pi_gl_version'   => '2.1.0',
+        'pi_gl_version'   => '2.1.1',
         'pi_homepage'     => 'http://http://code.google.com/p/geeklog/'
     );
 
