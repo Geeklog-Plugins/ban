@@ -236,19 +236,6 @@ function plugin_commentsupport_ban()
     return false;
 }
 
-/**
-* Shows the statistics for the ban plugin on stats.php.  If
-* $showsitestats is 1 then we are to only print the overall stats in the 'site
-* statistics' box otherwise we show the detailed stats for the stats
-*
-* @showsitestate        int         Flag to let us know which stats to get
-*/
-
-function plugin_showstats_ban($showsitestats) 
-{
-    $retval = array();
-	return $retval;
-}
 
 /**
 * This will put an option for ban in the command and control block on
