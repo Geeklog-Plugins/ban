@@ -371,7 +371,10 @@ function BAN_check()
     
     $HTTP_USER_AGENT = $_SERVER['HTTP_USER_AGENT']; 
     $REMOTE_ADDR = $_SERVER['REMOTE_ADDR'];
-    $HTTP_REFERER = $_SERVER['HTTP_REFERER'];
+    $HTTP_REFERER = ''; // May not always be set if no real referrer. Depends on web server 
+    if (isset($_SERVER['HTTP_REFERER'])) {
+        $HTTP_REFERER = $_SERVER['HTTP_REFERER'];
+    }
     $SCRIPT_NAME = $_SERVER['SCRIPT_NAME'];
     
     $current_date = date("Y-m-d H:i:s");
