@@ -337,7 +337,8 @@ function BAN_for_plugins_ban_ip($ip, $plugin, $ban = true, $note = '')
 					$note = strip_tags($note);
 					$note = addslashes($note);
 					
-					DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('$type', '$data', $status, '$note')",1);
+					//DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('$type', '$data', $status, '$note')",1);
+                    BAN_insertREMOT_ADDR($data, $status, $note);
 					
 					$retval = true;
 				} else {
@@ -389,7 +390,7 @@ function BAN_check()
     for ($i = 0; $i < $nrows; $i++) {
         $A = DB_fetchArray($result);
         
-        $ip = $$A['bantype']; // info like ip,domain to check
+        $ip = $A['bantype']; // info like ip,domain to check
         $val = $A['data']; // What we are looking for to ban
         $status = $A['status']; // Ban Status
         $matches = false;
@@ -399,17 +400,18 @@ function BAN_check()
             if (strpos($val, '/') !== false) {
                 $matches = BAN_matchCIDR($ip, $val);
             } elseif (strpos($val, '-') !== false) {
-                $matches = BAN_matchRange($ip, $val);
+                $matches = BAN_matchRange($ip, $val); 
             } else {
                 //04/10/13 06:07:56 - Access Banned because 46.118.123.107 matches 46.118.123.10 
                 //$matches = (preg_match("#$val#i", $ip) == 0 ? false : true);
                 //$matches = (($val == $ip) == 0 ? false : true);
                 $matches = (preg_match("#^$val$#i", $ip) == 0 ? false : true);
+                //$matches = (preg_match("#^$val#i", $ip) == 0 ? false : true);
             }
         } else {
             $matches = (preg_match("#$val#i", $ip) == 0 ? false : true);
         }
-
+        
         if ($matches) {
             // quit on first positive match
             if ($status == CONST_BAN_STATUS_WHITE) {
@@ -420,7 +422,7 @@ function BAN_check()
                 $ans = 1; 
                 
                 if ($_BAN_CONF['logging_db']) {
-                    BAN_Log('Access Banned because ' . $$A['bantype'] . " matches {$A['data']}");
+                    BAN_Log('Access Banned because ' . $A['bantype'] . " matches {$A['data']}");
                 }
                 
                 break;
@@ -476,7 +478,8 @@ function BAN_check()
                         if ($_BAN_CONF['gus_referrer_num'] <= $nrows) {
                             $ans = 1;
                             // IP has to many Referrers in a given time so ban
-                            DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('REMOTE_ADDR', '{$REMOTE_ADDR}', {$_BAN_CONF['gus_referrer_status']}, '{$LANG_BAN00['gus_referrer_note']}')",1);
+                            // DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('REMOTE_ADDR', '{$REMOTE_ADDR}', {$_BAN_CONF['gus_referrer_status']}, '{$LANG_BAN00['gus_referrer_note']}')",1);
+                            BAN_insertREMOT_ADDR($REMOTE_ADDR, $_BAN_CONF['gus_referrer_status'], $LANG_BAN00['gus_referrer_note']);
 
                             if ($_BAN_CONF['logging_auto']) {
                                 // BAN_Log("Access Banned because $REMOTE_ADDR has to many referrers in a given time. Added to Ban database.");
@@ -524,7 +527,8 @@ function BAN_check()
                             if ($_BAN_CONF['gus_url_num'] <= $nrows) {
                                 $ans = 1;
                                 // IP has to many Referrers in a given time so ban
-                                DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('REMOTE_ADDR', '{$REMOTE_ADDR}', {$_BAN_CONF['gus_url_status']}, '{$LANG_BAN00['gus_url_note']}')",1);
+                                // DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('REMOTE_ADDR', '{$REMOTE_ADDR}', {$_BAN_CONF['gus_url_status']}, '{$LANG_BAN00['gus_url_note']}')",1);
+                                BAN_insertREMOT_ADDR($REMOTE_ADDR, $_BAN_CONF['gus_url_status'], $LANG_BAN00['gus_url_note']);
         
                                 if ($_BAN_CONF['logging_auto']) {
                                     // BAN_Log("Access Banned because $REMOTE_ADDR has requested to many times a matching page with query string in a given time. Added to Ban database.");
@@ -557,7 +561,8 @@ function BAN_check()
                 if ($_BAN_CONF['gus_user_agent_num'] <= $nrows) {
                     $ans = 1;
                     // IP has to many user agents in a given time so ban
-                    DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('REMOTE_ADDR', '{$REMOTE_ADDR}', {$_BAN_CONF['gus_user_agent_status']}, '{$LANG_BAN00['gus_user_agent_note']}')",1);
+                    // DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('REMOTE_ADDR', '{$REMOTE_ADDR}', {$_BAN_CONF['gus_user_agent_status']}, '{$LANG_BAN00['gus_user_agent_note']}')",1);
+                    BAN_insertREMOT_ADDR($REMOTE_ADDR, $_BAN_CONF['gus_user_agent_status'], $LANG_BAN00['gus_user_agent_note']);
                     
                     if ($_BAN_CONF['logging_auto']) {
                         // BAN_Log("Access Banned because $REMOTE_ADDR has to many user agents in a given time. Added to Ban database.");
@@ -584,7 +589,8 @@ function BAN_check()
                 if ($_BAN_CONF['gus_hits_num'] <= $A['count_ip']) {
                     $ans = 1;
                     // IP has visited to many times in a given time so ban
-                    DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('REMOTE_ADDR', '{$REMOTE_ADDR}', {$_BAN_CONF['gus_hits_status']}, '{$LANG_BAN00['gus_hits_note']}')",1);
+                    // DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('REMOTE_ADDR', '{$REMOTE_ADDR}', {$_BAN_CONF['gus_hits_status']}, '{$LANG_BAN00['gus_hits_note']}')",1);
+                    BAN_insertREMOT_ADDR($REMOTE_ADDR, $_BAN_CONF['gus_hits_status'], $LANG_BAN00['gus_hits_note']);
                     
                     if ($_BAN_CONF['logging_auto']) {
                         // BAN_Log("Access Banned because $REMOTE_ADDR has to many hits in a given time. Added to Ban database.");
@@ -641,6 +647,24 @@ function BAN_check()
     } elseif ($ans == 2) {
         // White listed so exit check
         return;
+    }
+}
+
+/**
+ * Used for function.inc to insert bans from other plugins and auto bans. Ban type must be REMOTE_ADDR
+ */
+function BAN_insertREMOT_ADDR($data, $status, $note = '')
+{
+    global $_TABLES;
+
+    // Confirm Ban doesn't exist first for exact data (ip or range, etc.. If ip is in range will not catch match)
+    // If white found then will not insert
+    $type = 'REMOTE_ADDR';
+    if (DB_count($_TABLES['ban'], array('data', 'bantype'), array($data, $type)) == 0) {
+        DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('$type', '$data', $status, '$note')",1);
+    } else {
+        // Duplicate found which should not have happen so report it in log
+        COM_errorLog("Ban Plugin tried to insert a ban for type '$type' and data '$data' which already exists (status is '$status' and note is '$note'). This should not have happen.",1);
     }
 }
 
