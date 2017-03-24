@@ -396,6 +396,7 @@ function BAN_check()
     $ans = 0; // flag for if anything is tripped (0 = not banned, 1 = banned, 2 = white)
 
     // ***********************
+    // Have split up the checking of records like this (with more ban types that separate exact match and regex) to speed up ban check
     // Do 4 checks REMOTE_ADDR , HTTP_REFERER, HTTP_USER_AGENT, SCRIPT_NAME (not regular expression)
     for ($i = 1; $i < 5; $i++) {
         switch($i) {
