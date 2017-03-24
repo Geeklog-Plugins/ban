@@ -380,7 +380,7 @@ function BAN_check()
     $current_date = date("Y-m-d H:i:s");
     $dateinsec = strtotime($current_date);    
     
-    $ans = 0; // flag for if anything is tripped (0 = not banned, 1 = banned, 2 = white) 
+    $ans = 0; // flag for if anything is tripped (0 = not banned, 1 = banned, 2 = white)
 
     // Check our own Ban table
     $result = DB_Query("SELECT bantype, data, status FROM {$_TABLES['ban']} ORDER BY status ASC",1);
@@ -638,6 +638,9 @@ function BAN_check()
         } else {
             die();
         }
+    } elseif ($ans == 2) {
+        // White listed so exit check
+        return;
     }
 }
 
