@@ -51,9 +51,9 @@ function plugin_autoinstall_ban($pi_name)
     $info = array(
         'pi_name'         => $pi_name,
         'pi_display_name' => $pi_display_name,
-        'pi_version'      => '2.0.0',
+        'pi_version'      => '2.0.1',
         'pi_gl_version'   => '2.1.1',
-        'pi_homepage'     => 'http://http://code.google.com/p/geeklog/'
+        'pi_homepage'     => 'https://github.com/Geeklog-Plugins/ban'
     );
 
     $groups = array(

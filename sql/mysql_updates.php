@@ -43,7 +43,11 @@ $_UPDATES = array(
         "UPDATE {$_TABLES['plugins']} SET pi_gl_version = '1.8.0', pi_homepage = 'http://code.google.com/p/geeklog/'  WHERE pi_name = 'ban'", // Update plugin requirements
         "INSERT INTO {$_TABLES['vars']} (name, value) VALUES ('ban_last_ttl_check','');", // New Geeklog variable for date of last ban TTL check
         "INSERT INTO {$_TABLES['vars']} (name, value) VALUES ('ban_last_sfsdownload','');" // New Geeklog variable for date of last attempt at a Stop Forum Database download
-    )
+    ), 
+    
+    '2.0.0' => array(
+        "UPDATE {$_TABLES['plugins']} SET pi_homepage = 'https://github.com/Geeklog-Plugins/ban' WHERE pi_name = 'ban'" // Update plugin requirements
+    )    
     
 );
 

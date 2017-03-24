@@ -171,6 +171,18 @@ function plugin_upgrade_ban()
             
             $current_version = '2.0.0';
             break;
+            
+        case '2.0.0':
+            if (isset($_UPDATES[$current_version])) {
+                $_SQL = $_UPDATES[$current_version];
+                foreach ($_SQL as $sql) {
+                    DB_query($sql);
+                }
+            }
+            
+            $current_version = '2.0.1';
+            break;
+            
 
         default:
             $done = true;
@@ -379,58 +391,115 @@ function BAN_check()
     $SCRIPT_NAME = $_SERVER['SCRIPT_NAME'];
     
     $current_date = date("Y-m-d H:i:s");
-    $dateinsec = strtotime($current_date);    
+    $dateinsec = strtotime($current_date);
     
     $ans = 0; // flag for if anything is tripped (0 = not banned, 1 = banned, 2 = white)
 
-    // Check our own Ban table
-    $result = DB_Query("SELECT bantype, data, status FROM {$_TABLES['ban']} ORDER BY status ASC",1);
-    $nrows = DB_numRows( $result );
-    
-    for ($i = 0; $i < $nrows; $i++) {
-        $A = DB_fetchArray($result);
-        
-        $ip = $A['bantype']; // info like ip,domain to check
-        $val = $A['data']; // What we are looking for to ban
-        $status = $A['status']; // Ban Status
-        $matches = false;
-
-        // Allow for Remote Addresses CIDR and ranges along with preg_match (Borrowed from Spam-X)
-        if ($A['bantype'] == 'REMOTE_ADDR') {
-            if (strpos($val, '/') !== false) {
-                $matches = BAN_matchCIDR($ip, $val);
-            } elseif (strpos($val, '-') !== false) {
-                $matches = BAN_matchRange($ip, $val); 
-            } else {
-                //04/10/13 06:07:56 - Access Banned because 46.118.123.107 matches 46.118.123.10 
-                //$matches = (preg_match("#$val#i", $ip) == 0 ? false : true);
-                //$matches = (($val == $ip) == 0 ? false : true);
-                $matches = (preg_match("#^$val$#i", $ip) == 0 ? false : true);
-                //$matches = (preg_match("#^$val#i", $ip) == 0 ? false : true);
-            }
-        } else {
-            $matches = (preg_match("#$val#i", $ip) == 0 ? false : true);
+    // ***********************
+    // Do 4 checks REMOTE_ADDR , HTTP_REFERER, HTTP_USER_AGENT, SCRIPT_NAME (not regular expression)
+    for ($i = 1; $i < 5; $i++) {
+        switch($i) {
+            case 1:    
+                $bantype = "REMOTE_ADDR";
+                $data = $REMOTE_ADDR;
+                break;
+            case 2:
+                $bantype = "HTTP_REFERER";
+                $data = $HTTP_REFERER;
+                break;
+            case 3:   
+                $bantype = "HTTP_USER_AGENT";
+                $data = $HTTP_USER_AGENT;
+                break;
+            case 4:   
+                $bantype = "SCRIPT_NAME";
+                $data = $SCRIPT_NAME;
+                break;
         }
+        $data = stripslashes($data);
         
-        if ($matches) {
+        $sql = "SELECT bantype, data, status FROM {$_TABLES['ban']} WHERE bantype = '$bantype' AND data = '$data'"; 
+        $result = DB_Query($sql,1);
+        $nrows = DB_numRows( $result );    
+        if ($nrows > 0) {
+            $A = DB_fetchArray($result);
+            $status = $A['status']; // Ban Status
+            
             // quit on first positive match
             if ($status == CONST_BAN_STATUS_WHITE) {
                 $ans = 2; // White Status
                 
-                break;
             } else {
                 $ans = 1; 
                 
                 if ($_BAN_CONF['logging_db']) {
-                    BAN_Log('Access Banned because ' . $A['bantype'] . " matches {$A['data']}");
+                    BAN_Log('Access Banned because ' . $A['bantype'] . " equals {$A['data']}");
                 }
                 
                 break;
             }
         }
+    } 
+    
+    // ***********************
+    // Now Check for regular expressions (regex)
+    // Order by status first (so white list is first) then bantype (so REMOTE_ADDR is first) and then it goes REMOTE_ADDR , HTTP_REFERER, HTTP_USER_AGENT, SCRIPT_NAME
+    if ($ans == 0) {
+        $sql = "SELECT bantype, data, status FROM {$_TABLES['ban']} 
+            WHERE bantype = 'REMOTE_ADDR_RANGE' OR bantype = 'REMOTE_ADDR_CIDR' OR bantype = 'REMOTE_ADDR_REGEX' OR bantype = 'HTTP_REFERER_REGEX' OR bantype = 'HTTP_USER_AGENT_REGEX' OR bantype = 'SCRIPT_NAME_REGEX' 
+            ORDER BY status ASC, bantype ASC";
+        $result = DB_Query($sql,1);
+        $nrows = DB_numRows( $result );
+
+        for ($i = 0; $i < $nrows; $i++) {
+            $A = DB_fetchArray($result);
+            
+            $ip = $REMOTE_ADDR; // info like ip, domain to check
+            $val = $A['data']; // What we are looking for to ban
+            $status = $A['status']; // Ban Status
+            $matches = false;
+
+            switch($A['bantype']) {
+                case 'REMOTE_ADDR_RANGE': 
+                    $matches = BAN_matchRange($REMOTE_ADDR, $val);
+                    break;
+                case 'REMOTE_ADDR_CIDR': 
+                    $matches = BAN_matchCIDR($REMOTE_ADDR, $val);
+                    break;                    
+                case 'REMOTE_ADDR_REGEX': 
+                    $matches = (preg_match("#$val#i", $REMOTE_ADDR) == 0 ? false : true);
+                    break;                    
+                case 'HTTP_REFERER_REGEX': 
+                    $matches = (preg_match("#$val#i", $HTTP_REFERER) == 0 ? false : true);
+                    break;                    
+                case 'HTTP_USER_AGENT_REGEX': 
+                    $matches = (preg_match("#$val#i", $HTTP_USER_AGENT) == 0 ? false : true);
+                    break;                    
+                case 'SCRIPT_NAME_REGEX': 
+                    $matches = (preg_match("#$val#i", $SCRIPT_NAME) == 0 ? false : true);
+                    break;                    
+            }                
+            
+            if ($matches) {
+                // quit on first positive match
+                if ($status == CONST_BAN_STATUS_WHITE) {
+                    $ans = 2; // White Status
+                    
+                    break;
+                } else {
+                    $ans = 1; 
+                    
+                    if ($_BAN_CONF['logging_db']) {
+                        BAN_Log('Access Banned because ' . $A['bantype'] . " matches {$A['data']}");
+                    }
+                    
+                    break;
+                }
+            }
+        }
     }
     
-
+    // ***********************
     // Check stop forum spam banned ips list as long as $ans not tripped (white list or other wise)        
     if ($_BAN_CONF['stopforumspam'] AND $ans == 0) {
         $db_location = $_CONF['path'] . 'plugins/ban/files/bannedips.csv';
@@ -445,6 +514,7 @@ function BAN_check()
         }
     }    
 
+    // ***********************
     // Auto Ban
     if ($_BAN_CONF['ban_auto'] AND $ans == 0) { // Don't need to autoban if already banned or on whitelist
 
@@ -645,7 +715,7 @@ function BAN_check()
             die();
         }
     } elseif ($ans == 2) {
-        // White listed so exit check
+        // White listed so exit check (will do anyways since at bottom of function)
         return;
     }
 }

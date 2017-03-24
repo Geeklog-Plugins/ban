@@ -80,25 +80,44 @@ function ban_form($A, $error = false)
     $ban_template->set_var('lang_note',$LANG_BAN00['note']);
     
     // Set type
+    // REMOTE_ADDR, HTTP_REFERER, HTTP_USER_AGENT, SCRIPT_NAME
+    // REMOTE_ADDR_RANGE, REMOTE_ADDR_CIDR, REMOTE_ADDR_REGEX, HTTP_REFERER_REGEX, HTTP_USER_AGENT_REGEX, SCRIPT_NAME_REGEX
     $retval = '';
-    for( $i = 1; $i <= 4; $i++ ) {
+    for( $i = 1; $i <= 10; $i++ ) {
         switch ($i) {
             case 1:
                 $name = 'REMOTE_ADDR';
                 break;
-                
             case 2:
+                $name = 'REMOTE_ADDR_RANGE';
+                break;
+            case 3:
+                $name = 'REMOTE_ADDR_CIDR';
+                break;
+            case 4:
+                $name = 'REMOTE_ADDR_REGEX';
+                break;
+                
+            case 5:
                 $name = 'HTTP_REFERER';
                 break;
+            case 6:
+                $name = 'HTTP_REFERER_REGEX';
+                break;
                 
-            case 3:
+            case 7:
                 $name = 'HTTP_USER_AGENT';
                 break;
+            case 8:
+                $name = 'HTTP_USER_AGENT_REGEX';
+                break;                
                 
-            case 4:
+            case 9:
                 $name = 'SCRIPT_NAME';
                 break;
-                
+            case 10:
+                $name = 'SCRIPT_NAME_REGEX';
+                break;
         }
         $selected = '';    
         if ($A['bantype'] == $name) {
@@ -216,6 +235,16 @@ function ban_list($database_age = '')
         }
         $instructions .= sprintf($LANG_BAN00['instructions_sfs'], $database_age);
     }
+
+    $HTTP_USER_AGENT = $_SERVER['HTTP_USER_AGENT']; 
+    $REMOTE_ADDR = $_SERVER['REMOTE_ADDR'];
+    $HTTP_REFERER = ''; // May not always be set if no real referrer. Depends on web server 
+    if (isset($_SERVER['HTTP_REFERER'])) {
+        $HTTP_REFERER = $_SERVER['HTTP_REFERER'];
+    }
+    $SCRIPT_NAME = $_SERVER['SCRIPT_NAME'];
+    $instructions .= sprintf($LANG_BAN00['instructions_info'], $HTTP_USER_AGENT, $REMOTE_ADDR, $HTTP_REFERER, $SCRIPT_NAME);
+    
     $retval .= ADMIN_createMenu($menu_arr, $instructions, plugin_geticon_ban());
 		
     $text_arr = array('has_extras'   => true,
@@ -277,8 +306,9 @@ function ban_save($id, $type, $status, $data, $note)
     
     if (!empty($type) && !empty($data)) {
         // Clean up the text
-        $note = strip_tags($note);
-        $note = addslashes($note);
+        $data = addslashes($data);
+        $note = addslashes(strip_tags($note));
+        
     
         if ($id == 0) {
             DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('$type', '$data', $status, '$note')",1);
@@ -405,7 +435,7 @@ if (($mode == $LANG_BAN00['delete']) && !empty ($LANG_BAN00['delete'])) {
         COM_applyFilter ($_POST['id'], true),
         COM_applyFilter($_POST['type']),
         COM_applyFilter($_POST['status'], true),
-        COM_applyFilter($_POST['data']),
+        $_POST['data'],
         $_POST['note']);                     
 } else {
     $display .= COM_siteHeader ('menu', $LANG_BAN00['ban_list']);
