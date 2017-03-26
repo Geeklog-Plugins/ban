@@ -281,7 +281,7 @@ function ban_editor($id, $mode = '', $error = false)
 {
     global $_TABLES;
 
-    if (!empty ($id) && $mode == 'edit') {
+    if (!empty($id) && $id !=0 && $mode == 'edit') {
         $query = DB_query("SELECT * FROM {$_TABLES['ban']} WHERE id = $id");
         $A = DB_fetchArray($query);
     } elseif ($mode == 'edit') {
@@ -303,21 +303,44 @@ function ban_save($id, $type, $status, $data, $note)
 {
     global $_CONF, $LANG_BAN00, $_TABLES;
     
+    $retval = "";
     
     if (!empty($type) && !empty($data)) {
         // Clean up the text
         $data = addslashes($data);
         $note = addslashes(strip_tags($note));
         
-    
+        
+            
         if ($id == 0) {
-            DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('$type', '$data', $status, '$note')",1);
+            // Make sure ban type and data is unique before inserting
+            if (DB_count($_TABLES['ban'], array('data', 'bantype'), array($data, $type)) == 0) {
+                DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('$type', '$data', $status, '$note')",1);
+            } else {
+                $retval = COM_siteHeader();
+                $retval .= ban_editor($id, '', true);
+                $retval .= COM_siteFooter();                 
+                
+                return $retval;
+            }
         } else {
-            DB_query("UPDATE {$_TABLES['ban']} SET bantype = '$type', data = '$data', status = $status, note = '$note' WHERE id = $id",1);
+            // Make sure ban type and data is unique before updating
+            $sql = "SELECT COUNT(id) count FROM {$_TABLES['ban']} WHERE bantype = '$type' AND data = '$data' AND id != $id";
+            $result = DB_Query($sql);
+            $A = DB_fetchArray($result);            
+            $count = $A['count'];
+            if ($count == 0) {
+                DB_query("UPDATE {$_TABLES['ban']} SET bantype = '$type', data = '$data', status = $status, note = '$note' WHERE id = $id",1);
+            } else {
+                $retval = COM_siteHeader();
+                $retval .= ban_editor($id, '', true);
+                $retval .= COM_siteFooter();                 
+                
+                return $retval;
+            }
         }
         
-        $retval = COM_refresh($_CONF['site_admin_url']
-                          . '/plugins/ban/index.php?msg=1');
+        $retval = COM_refresh($_CONF['site_admin_url'] . '/plugins/ban/index.php?msg=1');
     } else {
         $retval .= COM_siteHeader();
         $retval .= ban_editor($id, '', 1);

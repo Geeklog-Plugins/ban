@@ -443,12 +443,12 @@ function BAN_check()
     } 
     
     // ***********************
-    // Now Check for regular expressions (regex)
-    // Order by status first (so white list is first) then bantype (so REMOTE_ADDR is first) and then it goes REMOTE_ADDR , HTTP_REFERER, HTTP_USER_AGENT, SCRIPT_NAME
+    // Now Check for ranges and regular expressions (regex) REMOTE_ADDR_RANGE, REMOTE_ADDR_CIDR, REMOTE_ADDR_REGEX, HTTP_REFERER_REGEX, HTTP_USER_AGENT_REGEX, SCRIPT_NAME_REGEX
+    // Order by status first (so white list is first) 
     if ($ans == 0) {
         $sql = "SELECT bantype, data, status FROM {$_TABLES['ban']} 
             WHERE bantype = 'REMOTE_ADDR_RANGE' OR bantype = 'REMOTE_ADDR_CIDR' OR bantype = 'REMOTE_ADDR_REGEX' OR bantype = 'HTTP_REFERER_REGEX' OR bantype = 'HTTP_USER_AGENT_REGEX' OR bantype = 'SCRIPT_NAME_REGEX' 
-            ORDER BY status ASC, bantype ASC";
+            ORDER BY status ASC";
         $result = DB_Query($sql,1);
         $nrows = DB_numRows( $result );
 

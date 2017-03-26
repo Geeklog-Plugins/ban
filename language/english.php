@@ -74,7 +74,7 @@ $LANG_BAN00 = array (
     
     'stopforumspam_note'   => "Your Stop Forum Spam database is older than {$_BAN_CONF['stopforumspam_file_date']} days. Please download a new database at the <a href='http://www.stopforumspam.com/downloads/' target='_blank'>Stop Forum Spam website</a>. To automatically download it now, <a href='/admin/plugins/ban/index.php?mode=sfs_download'>click here</a>. Remember for automatic download to work you need to make sure that your website has write access for the SFS database file.",
     
-    'error_editor_no_data'  => 'Your ban must have a type, status and data.',
+    'error_editor_no_data'  => 'Your ban must have a type, status and data. The type and data combination must also not already exist in the database.',
     'access_denied'         => 'Access Denied',
 	'access_denied_msg'     => 'Only Root Users or Ban Users have Access to this Page.  Your user name and IP have been recorded.'
 );
