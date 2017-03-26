@@ -47,7 +47,7 @@ $_UPDATES = array(
     
     '2.0.0' => array(
         "UPDATE `{$_TABLES['plugins']}` SET pi_homepage = 'https://github.com/Geeklog-Plugins/ban' WHERE pi_name = 'ban'", 
-        "ALTER TABLE `{$_TABLES['plugins']}` ADD INDEX( `status`); "
+        "ALTER TABLE `{$_TABLES['ban']}` ADD INDEX( `status`); "
     )    
     
 );
