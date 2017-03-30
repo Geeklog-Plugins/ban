@@ -54,7 +54,7 @@ $_BAN_CONF['stopforumspam_auto_download'] = false; // Remember your IP is limite
 $_BAN_CONF['stopforumspam_retry_download'] = 28800; // In seconds. Value cannot be lower than 8 hours (28800). 1 Day = 86400 seconds
 $_BAN_CONF['stopforumspam_database_zip_name'] = "bannedips.zip";
 $_BAN_CONF['stopforumspam_database_name'] = "bannedips.csv";
-$_BAN_CONF['stopforumspam_database_location'] = "http://www.stopforumspam.com/downloads/";
+$_BAN_CONF['stopforumspam_database_location'] = "https://www.stopforumspam.com/downloads";
 
 // 0 = Disable Time to Live for ban record. Number of MINUTES in a month (1440 = 1 day, 10080 = 1 week, 43829 = 1 month, 525949 = 1 year)
 $_BAN_CONF['ban_ttl_check'] = 1440; // For when to do the next 3 checks. This number should be equal or smaller than ttl_short
@@ -67,7 +67,7 @@ $_BAN_CONF['default_status'] = CONST_BAN_STATUS_NORMAL;
 
 // ******* Careful with this as it could ban bots you want like Googlebot, msnbot, etc... (hint add them to your white list)
 // Turn on Auto Ban
-$_BAN_CONF['ban_auto'] = true;
+$_BAN_CONF['ban_auto'] = false;
 $_BAN_CONF['ban_auto_check'] = 0; // Number of seconds to wait to check IP again (IP is stored in DB. If 0 check IP everytime.
 // Auto Ban - User Agents -  If IP exceeds x number of different user agents in X number of seconds then Ban. Based on GUS data.
 $_BAN_CONF['gus_user_agent'] = true;
