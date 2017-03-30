@@ -15,6 +15,8 @@
 ## Summary of features
 This plugin is designed for Geeklog version 2.1.1 or higher. It can also work with the GUS plugin (https://github.com/Geeklog-Plugins) version 1.7.3 or higher.
 
+Note: The Ban Plugin should be the first plugin in the Geeklog Administrator Plugin List. If the visitor is banned this saves the additional overhead of having to load the other plugins. You should confirm this after you install/upgrade the plugin as it is not done automatically.
+
 The Ban plugin allows you to ban people and bots from your website.  You can ban a bot/visitor by IP, Referer, User Agent or Script Name.  Exact matches and case insensitive regular expressions (regex) are used to give you great flexibility.  The php preg_match function is used to do the regular expressions matches.
 
 As of Ban plugin v2.0.0 new features include the ability to set a Ban Status for a Ban record, use the Stop Forum Spam Database to ban IPs, and Auto Ban visitors based on their previous visits using the GUS Plugin data. All these features have multiple config settings that can be set in the Ban config.php file.
