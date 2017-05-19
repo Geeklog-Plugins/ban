@@ -45,6 +45,8 @@ $_BAN_CONF['logging_sfs'] = true; // log banned access based on stop forum spam 
 $_BAN_CONF['logging_auto'] = true; // log new auto banned ips that match rules
 
 // Set this variable to the filename to show banned users/bots or set to '' to show a blank page.
+// For example if you moved the 404.html to your sites root directory (the Geeklog public_html directory) then it would look like:
+// $_BAN_CONF['page'] = '/404.html';
 $_BAN_CONF['page'] = '';
 
 // Ban IP by using stopforumspam banned ips list

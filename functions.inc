@@ -710,7 +710,7 @@ function BAN_check()
     
     if ($ans == 1) { // Something has triggered the ban so... (0 = not banned, 1 = banned, 2 = white)   
         if ($_BAN_CONF['page'] != '') {
-            echo COM_refresh($_BAN_page);
+            echo COM_redirect($_BAN_CONF['page']);
             die();
         } else {
             die();
