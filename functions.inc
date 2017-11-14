@@ -183,6 +183,9 @@ function plugin_upgrade_ban()
             $current_version = '2.0.1';
             break;
             
+        case '2.0.1':
+            $current_version = '2.0.2';
+            break;
 
         default:
             $done = true;
@@ -337,14 +340,16 @@ function BAN_for_plugins_ban_ip($ip, $plugin, $ban = true, $note = '')
     $retval = false;
     
     if (BAN_for_plugins_check_access()) {
-		if (in_array($plugin, $_PLUGINS)) {
+		if (in_array($plugin, $_PLUGINS) || $plugin == '') { // if $plugin = '' assume core is calling it
 			if (filter_var($ip, FILTER_VALIDATE_IP) !== false) {
 				$data = $ip;
 				$type = 'REMOTE_ADDR';
 				$status = CONST_BAN_STATUS_NORMAL;
 				
 				if ($ban) {
-					$note = sprintf($LANG_BAN00['ban_plugin_note'], $plugin) . $note;
+                    if ($plugin != '') {
+                        $note = sprintf($LANG_BAN00['ban_plugin_note'], $plugin) . $note;
+                    }
 					// Clean up the text
 					$note = strip_tags($note);
 					$note = addslashes($note);
