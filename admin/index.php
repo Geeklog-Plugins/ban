@@ -34,17 +34,12 @@ require_once ('../../../lib-common.php');
 require_once ('../../auth.inc.php');
 
 if (!SEC_hasRights ('ban.admin')) {
-    $display = COM_siteHeader ('menu');
-    $display .= COM_startBlock ($LANG_BAN00['access_denied'], '',
-                        COM_getBlockTemplate ('_msg_block', 'header'));
-    $display .= $LANG_BAN00['access_denied_msg'];
-    $display .= COM_endBlock (COM_getBlockTemplate ('_msg_block', 'footer'));
-    $display .= COM_siteFooter ();
-    COM_accessLog ("User {$_USER['username']} tried to illegally access the ban administration screen.");
-    echo $display;
+    $display = COM_showMessageText($MESSAGE[29], $MESSAGE[30]);
+    $display = COM_createHTMLDocument($display, array('pagetitle' => $MESSAGE[30]));
+    COM_accessLog("User {$_USER['username']} tried to illegally access the ban administration screen.");
+    COM_output($display);
     exit;
 }
-
 
 /**
 * Displays the ban form 
@@ -55,7 +50,7 @@ if (!SEC_hasRights ('ban.admin')) {
 */ 
 function ban_form($A, $error = false) 
 {
-    global $_CONF, $LANG_BAN00, $LANG_ACCESS, $_TABLES;
+    global $_CONF, $LANG_BAN00, $LANG_ACCESS, $_TABLES, $MESSAGE;
 
     $display = '';
 
@@ -64,7 +59,7 @@ function ban_form($A, $error = false)
         $display .= COM_showMessageText($LANG_BAN00['error_editor_no_data'], $LANG_BAN00['ban_editor']);
     }
         
-    $ban_template = COM_newTemplate($_CONF['path'] . 'plugins/ban/templates/admin/');
+    $ban_template = COM_newTemplate(CTL_plugin_templatePath('ban', 'admin'));
     $ban_template->set_file('editor', 'editor.thtml');
 
     $ban_template->set_var('start_block_editor',
@@ -174,7 +169,14 @@ function ban_form($A, $error = false)
     
     $ban_template->set_var('lang_save', $LANG_BAN00['save']);
     $ban_template->set_var('lang_cancel', $LANG_BAN00['cancel']);
-    $ban_template->set_var('delete_option', '<input type="submit" value="' . $LANG_BAN00['delete'] . '" name="mode">');        
+    
+    if ($A['id'] != "0") {
+        $ban_template->set_var('allow_delete', true);
+        $ban_template->set_var('lang_delete', $LANG_BAN00['delete']);
+        $ban_template->set_var('confirm_message', $MESSAGE[76]);
+        // Old delete option to support older themes
+        $ban_template->set_var('delete_option', '<input type="submit" value="' . $LANG_BAN00['delete'] . '" name="mode" onclick="return confirm(' . "'" .  $MESSAGE[76] . "'" .  ');">');
+    }
 
     $ban_template->set_var('end_block',
             COM_endBlock (COM_getBlockTemplate ('_admin_block', 'footer')));
@@ -317,9 +319,8 @@ function ban_save($id, $type, $status, $data, $note)
             if (DB_count($_TABLES['ban'], array('data', 'bantype'), array($data, $type)) == 0) {
                 DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('$type', '$data', $status, '$note')",1);
             } else {
-                $retval = COM_siteHeader();
-                $retval .= ban_editor($id, '', true);
-                $retval .= COM_siteFooter();                 
+                $retval = ban_editor($id, '', true);
+                $retval = COM_createHTMLDocument($retval, array('pagetitle' => $LANG_BAN00['ban_editor']));                
                 
                 return $retval;
             }
@@ -332,19 +333,17 @@ function ban_save($id, $type, $status, $data, $note)
             if ($count == 0) {
                 DB_query("UPDATE {$_TABLES['ban']} SET bantype = '$type', data = '$data', status = $status, note = '$note' WHERE id = $id",1);
             } else {
-                $retval = COM_siteHeader();
-                $retval .= ban_editor($id, '', true);
-                $retval .= COM_siteFooter();                 
+                $retval = ban_editor($id, '', true);
+                $retval = COM_createHTMLDocument($retval, array('pagetitle' => $LANG_BAN00['ban_editor']));                                
                 
                 return $retval;
             }
         }
         
-        $retval = COM_refresh($_CONF['site_admin_url'] . '/plugins/ban/index.php?msg=1');
+        $retval = COM_redirect($_CONF['site_admin_url'] . '/plugins/ban/index.php?msg=1');
     } else {
-        $retval .= COM_siteHeader();
-        $retval .= ban_editor($id, '', 1);
-        $retval .= COM_siteFooter();        
+        $retval = ban_editor($id, '', 1);
+        $retval = COM_createHTMLDocument($retval, array('pagetitle' => $LANG_BAN00['ban_editor']));                                        
     }
     
     return $retval;
@@ -403,7 +402,7 @@ function ban_delete($id, $return_flag = 0)
             return false;
         } else {
             COM_accessLog ("User {$_USER['username']} tried to illegally delete ban id=$id.");
-            return COM_refresh ($_CONF['site_admin_url'] . '/plugins/ban/index.php');
+            return COM_redirect($_CONF['site_admin_url'] . '/plugins/ban/index.php');
         }        
     }    
 
@@ -413,7 +412,7 @@ function ban_delete($id, $return_flag = 0)
     if ($return_flag) {
         return true;
     } else {
-        return COM_refresh ($_CONF['site_admin_url'] . '/plugins/ban/index.php?msg=2');
+        return COM_redirect($_CONF['site_admin_url'] . '/plugins/ban/index.php?msg=2');
     }
 }
 
@@ -436,36 +435,34 @@ if (isset($_REQUEST['id'])) {
 if (($mode == $LANG_BAN00['delete']) && !empty ($LANG_BAN00['delete'])) {
     if (empty($id)) { 
         COM_errorLog ('Attempted to delete ban id=' . $id );
-        $display .= COM_refresh ($_CONF['site_admin_url'] . '/plugins/ban/index.php');
+        $display .= COM_redirect($_CONF['site_admin_url'] . '/plugins/ban/index.php');
     } else {
         $display .= ban_delete($id); 
     }    
 } else if ($mode == 'batchdeleteban') {
     $msg = batchdeleteban();
-    $display .= COM_refresh ($_CONF['site_admin_url'] . '/plugins/ban/index.php?msg=3');     
+    $display .= COM_redirect($_CONF['site_admin_url'] . '/plugins/ban/index.php?msg=3');     
 } else if ($mode == 'sfs_download') {
     if (BAN_sfs_download()) {
-        $display .= COM_refresh ($_CONF['site_admin_url'] . '/plugins/ban/index.php?msg=4');     
+        $display .= COM_redirect($_CONF['site_admin_url'] . '/plugins/ban/index.php?msg=4');     
     } else {
-        $display .= COM_refresh ($_CONF['site_admin_url'] . '/plugins/ban/index.php?msg=5');     
+        $display .= COM_redirect($_CONF['site_admin_url'] . '/plugins/ban/index.php?msg=5');     
     }
 } else if ($mode == 'edit') {
-    $display .= COM_siteHeader('menu', $LANG_BAN00['ban_editor']);
-    $display .= ban_editor($id, $mode);
-    $display .= COM_siteFooter();
+    $display = ban_editor($id, $mode);
+    $display = COM_createHTMLDocument($display, array('pagetitle' => $LANG_BAN00['ban_editor']));
 } else if (($mode == $LANG_BAN00['save']) && !empty ($LANG_BAN00['save'])) {
     $display = ban_save(
-        COM_applyFilter ($_POST['id'], true),
+        COM_applyFilter($_POST['id'], true),
         COM_applyFilter($_POST['type']),
         COM_applyFilter($_POST['status'], true),
         $_POST['data'],
         $_POST['note']);                     
 } else {
-    $display .= COM_siteHeader ('menu', $LANG_BAN00['ban_list']);
     if (isset ($_REQUEST['msg'])) {
-        $msg = COM_applyFilter ($_REQUEST['msg'], true);
+        $msg = COM_applyFilter($_REQUEST['msg'], true);
         if ($msg > 0) {
-            $display .= COM_showMessage ($msg, 'ban');
+            $display = COM_showMessage ($msg, 'ban');
         }
     }
     
@@ -484,9 +481,10 @@ if (($mode == $LANG_BAN00['delete']) && !empty ($LANG_BAN00['delete'])) {
     }        
     
     $display .= ban_list($database_age);
-    $display .= COM_siteFooter();
+    
+    $display = COM_createHTMLDocument($display, array('pagetitle' => $LANG_BAN00['ban_list']));
 }
 
-echo $display;
+COM_output($display);
 
 ?>
