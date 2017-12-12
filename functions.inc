@@ -297,6 +297,26 @@ function plugin_getuseroption_ban()
     return array();
 }
 
+/**
+* If user max invalid logins is reached lets ban
+*
+*/
+
+function plugin_user_login_max_invalid_ban($uid) 
+{
+    global $_BAN_CONF, $LANG_BAN00;    
+
+	if ($_BAN_CONF['max_invalid_logins']) {
+        $ip = $_SERVER['REMOTE_ADDR'];
+        $type = 'REMOTE_ADDR';
+        $status = $_BAN_CONF['max_invalid_logins_status'];
+        $note = sprintf($LANG_BAN00['ban_invalid_logins_note'], $uid);
+		if (filter_var($ip, FILTER_VALIDATE_IP) !== false) {
+            BAN_insertREMOT_ADDR($ip, $status, $note);
+		}
+	}
+}
+
 
 //////////////////////////////////////////////////////////////////////////////////
 // BAN API for other Plugins                                                    //
@@ -315,7 +335,7 @@ function BAN_for_plugins_check_access()
 
 function BAN_for_plugins_ban_found($ip)
 {
-	global $_TABLES;
+	global $_TABLES, $_BAN_CONF;
 	
 	$retval = false;
 	
@@ -323,7 +343,7 @@ function BAN_for_plugins_ban_found($ip)
 		if (filter_var($ip, FILTER_VALIDATE_IP) !== false) {
 			$data = $ip;
 			$type = 'REMOTE_ADDR';
-			$status = CONST_BAN_STATUS_NORMAL;		
+			$status = $_BAN_CONF['plugins_ban_ip_status'];		
 			if (DB_count($_TABLES['ban'], array('data', 'bantype', 'status'), array($data, $type, $status)) > 0) {
 				$retval = true;
 			}
@@ -335,7 +355,7 @@ function BAN_for_plugins_ban_found($ip)
 
 function BAN_for_plugins_ban_ip($ip, $plugin, $ban = true, $note = '')
 {
-    global $_PLUGINS, $LANG_BAN00, $_TABLES;
+    global $_PLUGINS, $LANG_BAN00, $_TABLES, $_BAN_CONF;
 
     $retval = false;
     
@@ -344,7 +364,7 @@ function BAN_for_plugins_ban_ip($ip, $plugin, $ban = true, $note = '')
 			if (filter_var($ip, FILTER_VALIDATE_IP) !== false) {
 				$data = $ip;
 				$type = 'REMOTE_ADDR';
-				$status = CONST_BAN_STATUS_NORMAL;
+				$status = $_BAN_CONF['plugins_ban_ip_status'];
 				
 				if ($ban) {
                     if ($plugin != '') {
@@ -355,9 +375,7 @@ function BAN_for_plugins_ban_ip($ip, $plugin, $ban = true, $note = '')
 					$note = addslashes($note);
 					
 					//DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('$type', '$data', $status, '$note')",1);
-                    BAN_insertREMOT_ADDR($data, $status, $note);
-					
-					$retval = true;
+                    $retval = BAN_insertREMOT_ADDR($data, $status, $note);
 				} else {
 					
 					if (DB_count($_TABLES['ban'], array('data', 'bantype', 'status'), array($data, $type, $status)) > 0) {
@@ -732,15 +750,19 @@ function BAN_check()
 function BAN_insertREMOT_ADDR($data, $status, $note = '')
 {
     global $_TABLES;
-
+    
     // Confirm Ban doesn't exist first for exact data (ip or range, etc.. If ip is in range will not catch match)
     // If white found then will not insert
     $type = 'REMOTE_ADDR';
     if (DB_count($_TABLES['ban'], array('data', 'bantype'), array($data, $type)) == 0) {
         DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('$type', '$data', $status, '$note')",1);
+        
+        return true;        
     } else {
         // Duplicate found which should not have happen so report it in log
         COM_errorLog("Ban Plugin tried to insert a ban for type '$type' and data '$data' which already exists (status is '$status' and note is '$note'). This should not have happen.",1);
+        
+        return false;
     }
 }
 

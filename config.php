@@ -49,6 +49,15 @@ $_BAN_CONF['logging_auto'] = true; // log new auto banned ips that match rules
 // $_BAN_CONF['page'] = '/404.html';
 $_BAN_CONF['page'] = '';
 
+// 0 = Disable Time to Live for ban record. Number of MINUTES in a month (1440 = 1 day, 10080 = 1 week, 43829 = 1 month, 525949 = 1 year)
+$_BAN_CONF['ban_ttl_check'] = 1440; // For when to do the next 3 checks. This number should be equal or smaller than ttl_short
+$_BAN_CONF['ttl_short'] = 1440; // Day
+$_BAN_CONF['ttl_meduium'] = 10080; // Week
+$_BAN_CONF['ttl_long'] = 43829; // Month
+
+// Default Status to select
+$_BAN_CONF['default_status'] = CONST_BAN_STATUS_NORMAL;
+
 // Ban IP by using stopforumspam banned ips list
 $_BAN_CONF['stopforumspam'] = false;
 $_BAN_CONF['stopforumspam_file_date'] = 7; // the number of days before the stop forum spam database file is considered old. Must be 1 or greater. Default is 7
@@ -58,14 +67,12 @@ $_BAN_CONF['stopforumspam_database_zip_name'] = "bannedips.zip";
 $_BAN_CONF['stopforumspam_database_name'] = "bannedips.csv";
 $_BAN_CONF['stopforumspam_database_location'] = "https://www.stopforumspam.com/downloads";
 
-// 0 = Disable Time to Live for ban record. Number of MINUTES in a month (1440 = 1 day, 10080 = 1 week, 43829 = 1 month, 525949 = 1 year)
-$_BAN_CONF['ban_ttl_check'] = 1440; // For when to do the next 3 checks. This number should be equal or smaller than ttl_short
-$_BAN_CONF['ttl_short'] = 1440; // Day
-$_BAN_CONF['ttl_meduium'] = 10080; // Week
-$_BAN_CONF['ttl_long'] = 43829; // Month
+// Ban IP by other plugins
+$_BAN_CONF['plugins_ban_ip_status'] = CONST_BAN_STATUS_NORMAL; // (anything except CONST_BAN_STATUS_WHITE is fine)
 
-// Default Status to select
-$_BAN_CONF['default_status'] = CONST_BAN_STATUS_NORMAL;
+// Ban IP of user which reached max invalid login attempts (Available only on Geeklog v2.2.0 and higher)
+$_BAN_CONF['max_invalid_logins'] = true;
+$_BAN_CONF['max_invalid_logins_status'] = CONST_BAN_STATUS_TTL_MEDIUM; // (anything except CONST_BAN_STATUS_WHITE is fine)
 
 // ******* Careful with this as it could ban bots you want like Googlebot, msnbot, etc... (hint add them to your white list)
 // Turn on Auto Ban
