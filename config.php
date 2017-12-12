@@ -71,6 +71,7 @@ $_BAN_CONF['stopforumspam_database_location'] = "https://www.stopforumspam.com/d
 $_BAN_CONF['plugins_ban_ip_status'] = CONST_BAN_STATUS_NORMAL; // (anything except CONST_BAN_STATUS_WHITE is fine)
 
 // Ban IP of user which reached max invalid login attempts (Available only on Geeklog v2.2.0 and higher)
+// Note: This only bans the last IP used that attempted the login of a user account which has experienced the max number of invalid login attempts in a certain amount of time (this is set in the Geeklog Configuration)
 $_BAN_CONF['max_invalid_logins'] = true;
 $_BAN_CONF['max_invalid_logins_status'] = CONST_BAN_STATUS_TTL_MEDIUM; // (anything except CONST_BAN_STATUS_WHITE is fine)
 
