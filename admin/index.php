@@ -466,6 +466,7 @@ if (($mode == $LANG_BAN00['delete']) && !empty ($LANG_BAN00['delete'])) {
         }
     }
     
+    $database_age = '';
     if ($_BAN_CONF['stopforumspam']) {
         $db_location = $_CONF['path'] . 'plugins/ban/files/' . $_BAN_CONF['stopforumspam_database_name'];  
         if (file_exists($db_location)) {
