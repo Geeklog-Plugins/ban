@@ -140,8 +140,8 @@ function plugin_upgrade_ban()
         return 3002;
     }
 
+    // Retrieve other plugin info like min geeklog version and homepage 
     $inst_parms = plugin_autoinstall_ban('ban');
-    $pi_gl_version = $inst_parms['info']['pi_gl_version'];
 
     require_once $_CONF['path'] . 'plugins/ban/sql/'
                                 . $_DB_dbms . '_updates.php';
@@ -192,7 +192,10 @@ function plugin_upgrade_ban()
         }
     }
 
-    DB_query("UPDATE {$_TABLES['plugins']} SET pi_version = '$code_version', pi_gl_version = '$pi_gl_version' WHERE pi_name = 'ban'");
+    // update plugin version number and other info
+    DB_query("UPDATE {$_TABLES['plugins']} SET pi_version = '$code_version', pi_gl_version = '{$inst_parms['info']['pi_gl_version']}', pi_homepage = '{$inst_parms['info']['pi_homepage']}' WHERE pi_name = 'ban'");
+
+    COM_errorLog( "Updated ban plugin from v$installed_version to v$code_version", 1 );    
 
     return true;
 }
