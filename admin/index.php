@@ -230,12 +230,33 @@ function ban_list($database_age = '')
     
     $instructions = $LANG_BAN00['instructions'];
     if ($_BAN_CONF['stopforumspam']) {
-        if ($database_age == '') {
-            $database_age = $LANG_BAN00['not_available'];
+        $destination = $_CONF['path'] . 'plugins/ban/files/';
+        $filename = $_BAN_CONF['stopforumspam_database_name'];
+        
+        if (file_exists($destination . $filename)) {
+            // SFS Database Age Message
+            if ($database_age == '') {
+                $database_age = $LANG_BAN00['not_available'];
+            } else {
+                $database_age = date("Y-m-d H:i:s", $database_age);
+            }
+            $instructions .= sprintf($LANG_BAN00['instructions_sfs'], $database_age);
+
+            // Database File Size Message
+            $file_size = filesize($destination . $filename);
+            if ($file_size > 0) {
+                $file_size = round($file_size / 1024); // Convert to bytes to KB
+                if ($file_size > 1000) {
+                    $instructions .= sprintf($LANG_BAN00['instructions_sfs_size'], $file_size);
+                } else {
+                    $instructions .= sprintf($LANG_BAN00['instructions_sfs_size_small'], $file_size);
+                }
+            } else {
+                $instructions .= $LANG_BAN00['instructions_sfs_size_error'];
+            }
         } else {
-            $database_age = date("Y-m-d H:i:s", $database_age);
+            $instructions .= sprintf($LANG_BAN00['instructions_sfs_db_missing'], $destination . $filename);
         }
-        $instructions .= sprintf($LANG_BAN00['instructions_sfs'], $database_age);
     }
 
     $HTTP_USER_AGENT = $_SERVER['HTTP_USER_AGENT']; 
