@@ -1024,12 +1024,14 @@ function BAN_sfs_download()
                     // Unzip file
                     $zip = new ZipArchive;
                     if ($zip->open($destination . $filename) === TRUE) {
-                        $zip->extractTo($destination);
+                        if ($zip->extractTo($destination) === TRUE) {
+                            $retval = true;
+                        } else {
+                            COM_errorLog("Could not unzip Stop Forum Spam database file. File may be corrupted. Make sure source location is correct: $source",1);
+                        }
                         $zip->close();
-                        
-                        $retval = true;
                     } else {
-                        COM_errorLog("Could not open and unzip Stop Forum Spam database file. File may be corrupted. Make sure source location is correct: $source",1);
+                        COM_errorLog("Could not open zipped Stop Forum Spam database file. File may be corrupted. Make sure source location is correct: $source",1);
                     }
                 } else {
                     COM_errorLog("Please check file/directory permissions. Could not write to file: $destination$filename",1);
