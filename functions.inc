@@ -1029,7 +1029,7 @@ function BAN_sfs_download()
                         
                         $retval = true;
                     } else {
-                        COM_errorLog('Could not download or unzip Stop Forum Spam database file.',1);
+                        COM_errorLog("Could not open and unzip Stop Forum Spam database file. File may be corrupted. Make sure source location is correct: $source",1);
                     }
                 } else {
                     COM_errorLog("Please check file/directory permissions. Could not write to file: $destination$filename",1);

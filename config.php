@@ -65,7 +65,7 @@ $_BAN_CONF['stopforumspam_auto_download'] = false; // Remember your IP is limite
 $_BAN_CONF['stopforumspam_retry_download'] = 28800; // In seconds. Value cannot be lower than 8 hours (28800). 1 Day = 86400 seconds
 $_BAN_CONF['stopforumspam_database_zip_name'] = "bannedips.zip";
 $_BAN_CONF['stopforumspam_database_name'] = "bannedips.csv";
-$_BAN_CONF['stopforumspam_database_location'] = "https://www.stopforumspam.com/downloads";
+$_BAN_CONF['stopforumspam_database_location'] = "https://www.stopforumspam.com/downloads/"; // Make sure to include the last backslash in the download location
 
 // Ban IP by other plugins
 $_BAN_CONF['plugins_ban_ip_status'] = CONST_BAN_STATUS_NORMAL; // (anything except CONST_BAN_STATUS_WHITE is fine)
