@@ -1,8 +1,8 @@
-# Geeklog Ban plugin - version 2.0.1
+# Geeklog Ban plugin - version 2.0.2
 
 * Current Maintainers: [Geeklog Community Members](https://github.com/orgs/Geeklog-Plugins/people)
 * Original Author: Tom Willett
-* Release Date: March 30, 2017
+* Release Date: 2018-06-07
 
 **Requires minimum Geeklog version 2.1.1 and MySQL 4.1+**
 
@@ -88,3 +88,7 @@ Config.php in the plugins/ban/ directory has a number of variables that control 
 
 * $_BAN_log Controls whether bans are logged to <geeklog>/logs/ban.log (same directory where your Geeklog error and access logs are.)
 * $_BAN_page Setting this to a page will display that page when the bot/person is banned.  Setting it to '' will just display a blank page.  Caution do not set this to one of our Geeklog Pages or a refresh look will occur.  There is a sample 404.html page in the package you can use.
+
+
+-----
+* 2.0.1 - Release Date: March 30, 2017
