@@ -999,9 +999,12 @@ function BAN_sfs_download()
         // SFS Download can only happen after retry time delay since download ip can get banned for downloading list too often
         //$now->sub(new DateInterval('P' . $_BAN_CONF['stopforumspam_file_date'] . 'D')); // minus number of days sfs database is allowed to be old
         $now->sub(new DateInterval('PT' . $_BAN_CONF['stopforumspam_retry_download'] . 'S')); // minus number of days sfs database is allowed to be old
-        $new_date = $now->format("Y-m-d H:i:s.u");        
+
+        $last_download = DateTime::createFromFormat('Y-m-d H:i:s.u', $sfs_last_download_date);
+        $last_download->add(new DateInterval('PT' . $_BAN_CONF['stopforumspam_retry_download'] . 'S')); // minus number of days sfs database is allowed to be old
+        $retry_date = $last_download->format("Y-m-d H:i:s"); 
         
-        if ($sfs_last_download_date <= $new_date) {
+        if ($retry_date <= $current_date) {
             //Set latest SFS download attempt
             DB_query("UPDATE {$_TABLES['vars']} SET value='{$current_date}' WHERE name='ban_last_sfsdownload'");          
         
@@ -1044,7 +1047,7 @@ function BAN_sfs_download()
                 }
             }
         } else {
-            COM_errorLog("Ban plugin did not download SFS database file since the last download at $sfs_last_download_date is less than the next time is is allowed to download (which is $new_date).",1);
+            COM_errorLog("Ban plugin did not download SFS database file. It was last downloaded at $sfs_last_download_date and the next time it is allowed to download is $retry_date.",1);
         }
     } else {
         COM_errorLog('Ban plugin could not download the Stop Forum Spam database file because the curl PHP extension is missing.',1);
