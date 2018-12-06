@@ -39,7 +39,7 @@ define("CONST_BAN_STATUS_TTL_LONG", 4);
 $_BAN_CONF['gus_userstats_table']  = $_DB_table_prefix . 'gus_userstats';	
 
 // Set this flag to true to enable logging of banned attempted accesses
-$_BAN_CONF['logging'] = true; // master switch for all logging
+$_BAN_CONF['logging'] = false; // master switch for all logging
 $_BAN_CONF['logging_db'] = true; // log banned access based on data from database
 $_BAN_CONF['logging_sfs'] = true; // log banned access based on stop forum spam database
 $_BAN_CONF['logging_auto'] = true; // log new auto banned ips that match rules
@@ -60,7 +60,7 @@ $_BAN_CONF['default_status'] = CONST_BAN_STATUS_NORMAL;
 
 // Ban IP by using stopforumspam banned ips list
 $_BAN_CONF['stopforumspam'] = false;
-$_BAN_CONF['stopforumspam_file_date'] = 7; // the number of days before the stop forum spam database file is considered old. Must be 1 or greater. Default is 7
+$_BAN_CONF['stopforumspam_file_date'] = 7; // the number of days before the stop forum spam database file is considered old and will be auto downloaded. Must be 1 or greater. Default is 7
 $_BAN_CONF['stopforumspam_auto_download'] = false; // Remember your IP is limited to 3 downloads per day. Auto download based on $_BAN_CONF['stopforumspam_file_date']  value
 $_BAN_CONF['stopforumspam_retry_download'] = 28800; // In seconds. Value cannot be lower than 8 hours (28800). 1 Day = 86400 seconds
 $_BAN_CONF['stopforumspam_database_zip_name'] = "bannedips.zip";
@@ -68,7 +68,7 @@ $_BAN_CONF['stopforumspam_database_name'] = "bannedips.csv";
 $_BAN_CONF['stopforumspam_database_location'] = "https://www.stopforumspam.com/downloads/"; // Make sure to include the last backslash in the download location
 
 // Ban IP by other plugins
-$_BAN_CONF['plugins_ban_ip_status'] = CONST_BAN_STATUS_NORMAL; // (anything except CONST_BAN_STATUS_WHITE is fine)
+$_BAN_CONF['plugins_ban_ip_status'] = CONST_BAN_STATUS_TTL_LONG; // (anything except CONST_BAN_STATUS_WHITE is fine)
 
 // Ban IP of user which reached max invalid login attempts (Available only on Geeklog v2.2.0 and higher)
 // Note: This only bans the last IP used that attempted the login of a user account which has experienced the max number of invalid login attempts in a certain amount of time (this is set in the Geeklog Configuration)

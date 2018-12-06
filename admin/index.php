@@ -186,7 +186,7 @@ function ban_form($A, $error = false)
     return $display;
 }
 
-function ban_list($database_age = '')
+function ban_list()
 {
     global $_CONF, $_BAN_CONF, $_TABLES, $_IMAGE_TYPE, $LANG_ADMIN, $LANG_BAN00;
     
@@ -234,13 +234,33 @@ function ban_list($database_age = '')
         $filename = $_BAN_CONF['stopforumspam_database_name'];
         
         if (file_exists($destination . $filename)) {
-            // SFS Database Age Message
-            if ($database_age == '') {
-                $database_age = $LANG_BAN00['not_available'];
+            // SFS Database Age as recorded in the DB
+            $sfs_last_download_date = DB_getItem($_TABLES['vars'], 'value', "name='ban_last_sfsdownload'"); // put it here to make the check as fast as possible
+
+            // Manual Retry date
+            $now = DateTime::createFromFormat('U.u', microtime(true));
+            $current_date = $now->format("Y-m-d H:i:s");
+            
+            if ($sfs_last_download_date == '') {
+                $instructions .= $LANG_BAN00['instructions_sfs_not_updated'];
             } else {
-                $database_age = date("Y-m-d H:i:s", $database_age);
+                $last_download = DateTime::createFromFormat('Y-m-d H:i:s.u', $sfs_last_download_date);
+                $last_download->add(new DateInterval('PT' . $_BAN_CONF['stopforumspam_retry_download'] . 'S')); // minus number of days sfs database is allowed to be old
+                $retry_date = $last_download->format("Y-m-d H:i:s");        
+                
+                $instructions .= sprintf($LANG_BAN00['instructions_sfs'], date("Y-m-d H:i:s", strtotime($sfs_last_download_date)), $retry_date, $current_date);
             }
-            $instructions .= sprintf($LANG_BAN00['instructions_sfs'], $database_age);
+
+            // Auto Download Information
+            if ($_BAN_CONF['stopforumspam_auto_download']) {
+                $next_download = DateTime::createFromFormat('Y-m-d H:i:s.u', $sfs_last_download_date);
+                $next_download->add(new DateInterval('P' . $_BAN_CONF['stopforumspam_file_date'] . 'D')); // minus number of days sfs database is allowed to be old
+                $auto_date = $next_download->format("Y-m-d H:i:s"); 
+                
+                $instructions .= sprintf($LANG_BAN00['instructions_sfs_auto_on'], $auto_date);
+            } else {
+                $instructions .= $LANG_BAN00['instructions_sfs_auto_off'];
+            }
 
             // Database File Size Message
             $file_size = filesize($destination . $filename);
@@ -496,13 +516,12 @@ if (($mode == $LANG_BAN00['delete']) && !empty ($LANG_BAN00['delete'])) {
             if ($database_age > (time() - (86400 * $_BAN_CONF['stopforumspam_file_date']))) {
                 // db file is less than stop forum spam old date
             } else {
-                //$display .= COM_showMessage ($msg, 'ban');
                 $display .= COM_showMessageText($LANG_BAN00['stopforumspam_note']);
             }
         }
     }        
     
-    $display .= ban_list($database_age);
+    $display .= ban_list();
     
     $display = COM_createHTMLDocument($display, array('pagetitle' => $LANG_BAN00['ban_list']));
 }

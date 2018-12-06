@@ -70,7 +70,7 @@ $_TABLES['ban']  = $_DB_table_prefix . 'ban';
 if ($_BAN_CONF['stopforumspam_file_date'] < 1) {
     $_BAN_CONF['stopforumspam_file_date'] = 7;
 }
-if ($_BAN_CONF['stopforumspam_retry_download'] < 28800) {
+if ($_BAN_CONF['stopforumspam_retry_download'] < 28800) { // Cannot be less than 8 hours or 28800 seconds
     $_BAN_CONF['stopforumspam_file_date'] = 28800;
 }
 
@@ -186,6 +186,10 @@ function plugin_upgrade_ban()
         case '2.0.1':
             $current_version = '2.0.2';
             break;
+            
+        case '2.0.2':
+            $current_version = '2.0.3';
+            break;            
 
         default:
             $done = true;
@@ -992,7 +996,9 @@ function BAN_sfs_download()
         $now = DateTime::createFromFormat('U.u', microtime(true));
         $current_date = $now->format("Y-m-d H:i:s.u");        
         
-        $now->sub(new DateInterval('P' . $_BAN_CONF['stopforumspam_file_date'] . 'D')); // minus number of days sfs database is allowed to be old
+        // SFS Download can only happen after retry time delay since download ip can get banned for downloading list too often
+        //$now->sub(new DateInterval('P' . $_BAN_CONF['stopforumspam_file_date'] . 'D')); // minus number of days sfs database is allowed to be old
+        $now->sub(new DateInterval('PT' . $_BAN_CONF['stopforumspam_retry_download'] . 'S')); // minus number of days sfs database is allowed to be old
         $new_date = $now->format("Y-m-d H:i:s.u");        
         
         if ($sfs_last_download_date <= $new_date) {
