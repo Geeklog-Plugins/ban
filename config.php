@@ -44,6 +44,10 @@ $_BAN_CONF['logging_db'] = true; // log banned access based on data from databas
 $_BAN_CONF['logging_sfs'] = true; // log banned access based on stop forum spam database
 $_BAN_CONF['logging_auto'] = true; // log new auto banned ips that match rules
 
+// Set this flag to true to enable emailing of newly added banned ips to system admin
+$_BAN_CONF['email'] = true; // master switch for all email
+$_BAN_CONF['email_auto'] = true; // email new auto banned ips that match rules
+
 // Set this variable to the filename to show banned users/bots or set to '' to show a blank page.
 // For example if you moved the 404.html to your sites root directory (the Geeklog public_html directory) then it would look like:
 // $_BAN_CONF['page'] = '/404.html';
@@ -59,7 +63,7 @@ $_BAN_CONF['ttl_long'] = 43829; // Month
 $_BAN_CONF['default_status'] = CONST_BAN_STATUS_NORMAL;
 
 // Ban IP by using stopforumspam banned ips list
-$_BAN_CONF['stopforumspam'] = false;
+$_BAN_CONF['stopforumspam'] = true;
 $_BAN_CONF['stopforumspam_file_date'] = 7; // the number of days before the stop forum spam database file is considered old and will be auto downloaded. Must be 1 or greater. Default is 7
 $_BAN_CONF['stopforumspam_auto_download'] = false; // Remember your IP is limited to 3 downloads per day. Auto download based on $_BAN_CONF['stopforumspam_file_date']  value
 $_BAN_CONF['stopforumspam_retry_download'] = 28800; // In seconds. Value cannot be lower than 8 hours (28800). 1 Day = 86400 seconds
@@ -77,8 +81,8 @@ $_BAN_CONF['max_invalid_logins_status'] = CONST_BAN_STATUS_TTL_MEDIUM; // (anyth
 
 // ******* Careful with this as it could ban bots you want like Googlebot, msnbot, etc... (hint add them to your white list)
 // Turn on Auto Ban
-$_BAN_CONF['ban_auto'] = false;
-$_BAN_CONF['ban_auto_check'] = 0; // Number of seconds to wait to check IP again (IP is stored in DB. If 0 check IP everytime.
+$_BAN_CONF['ban_auto'] = true;
+$_BAN_CONF['ban_auto_check'] = 0; // NOT USED YET - Number of seconds to wait to check IP again (IP is stored in DB. If 0 check IP every time.)
 // Auto Ban - User Agents -  If IP exceeds x number of different user agents in X number of seconds then Ban. Based on GUS data.
 $_BAN_CONF['gus_user_agent'] = true;
 $_BAN_CONF['gus_user_agent_num'] = 10;
@@ -86,14 +90,14 @@ $_BAN_CONF['gus_user_agent_time'] = 10800; // (3 hours) Number of SECONDS to che
 $_BAN_CONF['gus_user_agent_status'] = CONST_BAN_STATUS_TTL_LONG;
 // Auto Ban - Hits -  If IP exceeds X number of hits in X number of seconds then Ban. Based on GUS data.
 // Careful with this as it could ban bots you want like Googlebot, msnbot, etc... (hint add them to your white list)
-$_BAN_CONF['gus_hits'] = false;
-$_BAN_CONF['gus_hits_num'] = 200;
+$_BAN_CONF['gus_hits'] = true;
+$_BAN_CONF['gus_hits_num'] = 500; // 500 hits in an hour is just over 8 hits a minute
 $_BAN_CONF['gus_hits_time'] = 3600; // Number of SECONDS to check back (3600 = 1 hour, 86400 = 1 day)
 $_BAN_CONF['gus_hits_status'] = CONST_BAN_STATUS_TTL_MEDIUM;
 // Auto Ban - Referrer -  Ban IP that matches referrer in X number of seconds and for X number of times. Based on GUS data.
 $_BAN_CONF['gus_referrer'] = false;
 $_BAN_CONF['gus_referrer_match'] = array("");
-$_BAN_CONF['gus_referrer_min'] = 20; // Protection agains't too small of a match. A match string must be longer than this
+$_BAN_CONF['gus_referrer_min'] = 20; // Protection against too small of a match. A match string must be longer than this
 $_BAN_CONF['gus_referrer_num'] = 5;
 $_BAN_CONF['gus_referrer_time'] = 3600; // Number of SECONDS to check back (3600 = 1 hour, 86400 = 1 day)
 $_BAN_CONF['gus_referrer_status'] = CONST_BAN_STATUS_TTL_MEDIUM;

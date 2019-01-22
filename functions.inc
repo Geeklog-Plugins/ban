@@ -585,7 +585,11 @@ function BAN_check()
                             if ($_BAN_CONF['logging_auto']) {
                                 // BAN_Log("Access Banned because $REMOTE_ADDR has to many referrers in a given time. Added to Ban database.");
                                 BAN_Log("Access Banned because $REMOTE_ADDR has $nrows referrers that match $match in the last {$_BAN_CONF['gus_referrer_time']} seconds. Added to Ban database.");
-                            }                            
+                            }
+
+                            if ($_BAN_CONF['email_auto']) {
+                                BAN_email("Access Banned because $REMOTE_ADDR has $nrows referrers that match $match in the last {$_BAN_CONF['gus_referrer_time']} seconds. Added to Ban database.");
+                            }                             
                             
                             break;
                         }
@@ -634,9 +638,13 @@ function BAN_check()
                                 if ($_BAN_CONF['logging_auto']) {
                                     // BAN_Log("Access Banned because $REMOTE_ADDR has requested to many times a matching page with query string in a given time. Added to Ban database.");
                                     BAN_Log("Access Banned because $REMOTE_ADDR has requested $url $nrows times in the last {$_BAN_CONF['gus_url_time']} seconds. Added to Ban database.");
-                                }                            
+                                }
+
+                                if ($_BAN_CONF['email_auto']) {
+                                    BAN_email("Access Banned because $REMOTE_ADDR has requested $url $nrows times in the last {$_BAN_CONF['gus_url_time']} seconds. Added to Ban database.");
+                                }                             
                                 
-                                $counter = 3; // breack out of the array counter as well
+                                $counter = 3; // break out of the array counter as well
                                 break;
                             }
                         }
@@ -669,7 +677,10 @@ function BAN_check()
                         // BAN_Log("Access Banned because $REMOTE_ADDR has to many user agents in a given time. Added to Ban database.");
                         BAN_Log("Access Banned because $REMOTE_ADDR has $nrows user agents in the last {$_BAN_CONF['gus_user_agent_time']} seconds. Added to Ban database.");
                     }                            
-                    
+
+                    if ($_BAN_CONF['email_auto']) {
+                        BAN_email("Access Banned because $REMOTE_ADDR has $nrows user agents in the last {$_BAN_CONF['gus_user_agent_time']} seconds. Added to Ban database.");
+                    }                            
                 }
                 
             }
@@ -696,7 +707,11 @@ function BAN_check()
                     if ($_BAN_CONF['logging_auto']) {
                         // BAN_Log("Access Banned because $REMOTE_ADDR has to many hits in a given time. Added to Ban database.");
                         BAN_Log("Access Banned because $REMOTE_ADDR has {$A['count_ip']} hits in the last {$_BAN_CONF['gus_hits_time']} seconds. Added to Ban database.");
-                    }                      
+                    }
+                    
+                    if ($_BAN_CONF['email_auto']) {
+                        BAN_email("Access Banned because $REMOTE_ADDR has {$A['count_ip']} hits in the last {$_BAN_CONF['gus_hits_time']} seconds. Added to Ban database.");
+                    }
                 }
             }
             
@@ -888,6 +903,34 @@ function BAN_log( $logentry )
                    
         fputs( $file, "$timestamp - $logentry \n" );
     }
+}
+
+/**
+* Send ban notification to admin
+*
+* This will email a message to the System Admin
+*
+* @message        string      $string         Message to send
+*
+*/
+function BAN_email($message)
+{
+    global $_CONF, $LANG_BAN00, $_BAN_CONF, $LANG08;
+    
+    if ($_BAN_CONF['email']) { // Double check if enabled
+        $timestamp = strftime( "%c" );
+        
+        $mailsubject = $_CONF['site_name'] . ' ' . $LANG_BAN00['ip_auto_ban'];
+        
+        $mailbody = "$timestamp - $message \n";
+
+        $mailbody .= "\n------------------------------\n";
+        $mailbody .= "\n$LANG08[34]\n";
+        $mailbody .= "\n------------------------------\n";
+        
+        $retval = COM_mail($_CONF['site_mail'], $mailsubject, $mailbody);
+    }
+    
 }
 
 function plugin_geticon_ban ()
