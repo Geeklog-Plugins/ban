@@ -39,9 +39,9 @@ define("CONST_BAN_STATUS_TTL_LONG", 4);
 $_BAN_CONF['gus_userstats_table']  = $_DB_table_prefix . 'gus_userstats';	
 
 // Set this flag to true to enable logging of banned attempted accesses
-$_BAN_CONF['logging'] = false; // master switch for all logging
-$_BAN_CONF['logging_db'] = true; // log banned access based on data from database
-$_BAN_CONF['logging_sfs'] = true; // log banned access based on stop forum spam database
+$_BAN_CONF['logging'] = true; // master switch for all logging
+$_BAN_CONF['logging_db'] = false; // log banned access based on data from database
+$_BAN_CONF['logging_sfs'] = false; // log banned access based on stop forum spam database
 $_BAN_CONF['logging_auto'] = true; // log new auto banned ips that match rules
 
 // Set this flag to true to enable emailing of newly added banned ips to system admin
