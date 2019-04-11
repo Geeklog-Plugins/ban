@@ -547,6 +547,8 @@ function BAN_check()
 
     // ***********************
     // Auto Ban
+    // Check IP for bad behavior. If detected then ban ip and add to DB
+    // This process is expensive in terms of server resources
     if ($_BAN_CONF['ban_auto'] AND $ans == 0) { // Don't need to autoban if already banned or on whitelist
 
         if (in_array("gus", $_PLUGINS)) {
@@ -652,7 +654,6 @@ function BAN_check()
                 }
             }
             
-            
             // Check: Number of user agents in a given time by IP
             if ($_BAN_CONF['gus_user_agent'] AND $ans == 0) {
                 $new_date = $dateinsec - $_BAN_CONF['gus_user_agent_time'];
@@ -714,9 +715,7 @@ function BAN_check()
                     }
                 }
             }
-            
         }
-        
     }
     
     // TTL
