@@ -19,7 +19,7 @@
             <dt><label for="autotags-autotageditor-data">{lang_data}</label></dt>
             <dd><input type="text" name="data" value="{data}" maxlength="255" id="autotags-autotageditor-data" class="size10"{xhtml}></dd>            
             
-            <dt><label for="autotags-autotageditor-note">{lang_data}</label></dt>
+            <dt><label for="autotags-autotageditor-note">{lang_note}</label></dt>
             <dd><input type="text" name="note" value="{note}" maxlength="255" id="autotags-autotageditor-note" class="size10"{xhtml}></dd>              
         </dl>
     </div>
