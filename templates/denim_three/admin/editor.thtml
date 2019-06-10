@@ -1,0 +1,39 @@
+{# begin {templatelocation} #}
+
+{start_block_editor}
+<form method="post" action="{site_admin_url}/plugins/ban/index.php" id="ban-baneditor" class="compact">
+    <div class="admin_basic">
+        <dl class="form_block">
+            {!if allow_delete}
+            <dt><label for="ban-baneditor-id">{lang_id}</label></dt>
+            <dd>{id}</dd>
+            {!endif}
+            
+            <dt><label for="ban-baneditor-type">{lang_type}</label></dt>
+            <dd>
+                <select name="type" class="uk-select uk-form-width-medium">{options_type}</select>
+                &nbsp;&nbsp;{lang_status}:&nbsp;<select name="status" class="uk-select uk-form-width-small">{options_status}</select>
+                {!if allow_delete}&nbsp;&nbsp;{lang_created}:&nbsp;{created}{!endif}
+            </dd>            
+
+            <dt><label for="autotags-autotageditor-data">{lang_data}</label></dt>
+            <dd><input type="text" name="data" value="{data}" maxlength="255" id="autotags-autotageditor-data" class="uk-input uk-form-width-large"{xhtml}></dd>            
+            
+            <dt><label for="autotags-autotageditor-note">{lang_note}</label></dt>
+            <dd><input type="text" name="note" value="{note}" maxlength="255" id="autotags-autotageditor-note" class="uk-input uk-form-width-large"{xhtml}></dd>              
+        </dl>
+    </div>
+    
+    <div class="submit">
+        <button type="submit" name="mode" value="{lang_save}" class="uk-button uk-button-primary">{lang_save}</button>
+        {!if allow_delete}
+        <button type="submit" name="mode" value="{lang_delete}" class="uk-button uk-button-danger" onclick="return confirm('{confirm_message}');">{lang_delete}</button>
+        {!endif}
+        <button type="submit" name="mode" value="{lang_cancel}" class="uk-button uk-button-default">{lang_cancel}</button>
+        <input type="hidden" name="id" value="{id}">
+        <input type="hidden" name="created" value="{created}">
+    </div>    
+</form>
+{end_block}
+
+{# end {templatelocation} #}
