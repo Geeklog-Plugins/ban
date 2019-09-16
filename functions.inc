@@ -31,6 +31,7 @@
 // +---------------------------------------------------------------------------+
 //
 
+use Geeklog\Log;
 
 if (strpos(strtolower($_SERVER['PHP_SELF']), 'functions.inc') !== false) {
     die('This file can not be used on its own.');
@@ -892,15 +893,19 @@ function BAN_log( $logentry )
     global $_CONF, $LANG01, $_BAN_CONF;
     
     if ($_BAN_CONF['logging']) { // Double check if enabled
-        $timestamp = strftime( "%c" );
-        $logfile = $_CONF['path_log'] . 'ban.log';
-               
-        if( !$file = fopen( $logfile, a ))
-        {
-            COM_errorLog($LANG01[33] . $logfile . ' (' . $timestamp . ')',1);
-        }
+        if (COM_versionCompare(VERSION, '2.2.1', '>=')) {
+            Log::ban($logEntry);    
+        } else {
+            $timestamp = strftime( "%c" );
+            $logfile = $_CONF['path_log'] . 'ban.log';
                    
-        fputs( $file, "$timestamp - $logentry \n" );
+            if( !$file = fopen( $logfile, a ))
+            {
+                COM_errorLog($LANG01[33] . $logfile . ' (' . $timestamp . ')',1);
+            }
+                       
+            fputs( $file, "$timestamp - $logentry \n" );
+        }
     }
 }
 
