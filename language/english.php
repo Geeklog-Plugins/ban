@@ -1,7 +1,7 @@
 <?php
 
 ###############################################################################
-# lang.php
+# english.php
 # This is the English language page for the Geeklog Ban Plug-in!
 #
 # Copyright (C) 2003 Tom Willett
@@ -23,7 +23,7 @@
 #
 ###############################################################################
 
-## $Id: 
+## $Id:
 
 ###############################################################################
 # Array Format: 
@@ -84,7 +84,7 @@ $LANG_BAN00 = array (
     'gus_referrer_note'     => "GUS referrer exceeded ({$_BAN_CONF['gus_referrer_num']}) matches for ip within the last {$_BAN_CONF['gus_referrer_time']} seconds.",
     'gus_url_note'          => "GUS page and query string requests exceeded ({$_BAN_CONF['gus_url_num']}) matches for ip within the last {$_BAN_CONF['gus_url_time']} seconds.",
     
-    'stopforumspam_note'   => "Your Stop Forum Spam database is older than {$_BAN_CONF['stopforumspam_file_date']} days. Please download a new database at the <a href='http://www.stopforumspam.com/downloads/' target='_blank'>Stop Forum Spam website</a>. To automatically download it now, <a href='/admin/plugins/ban/index.php?mode=sfs_download'>click here</a>. Remember for automatic download to work you need to make sure that your website has write access for the SFS database file.",
+    'stopforumspam_note'   => "Your Stop Forum Spam database is older than {$_BAN_CONF['stopforumspam_file_date']} days. Please download a new database at the <a href='http://www.stopforumspam.com/downloads' target='_blank'>Stop Forum Spam website</a>. To automatically download it now, <a href='/admin/plugins/ban/index.php?mode=sfs_download'>click here</a>. Remember for automatic download to work you need to make sure that your website has write access for the SFS database file.",
     
     'error_editor_no_data'  => 'Your ban must have a type, status and data. The type and data combination must also not already exist in the database.',
     'access_denied'         => 'Access Denied',
@@ -99,5 +99,3 @@ $PLG_ban_MESSAGE2 = 'Your ban has been deleted successfully.';
 $PLG_ban_MESSAGE3 = 'Your selected bans have been deleted.';
 $PLG_ban_MESSAGE4 = 'Your Stop Forum Spam database has been updated.';
 $PLG_ban_MESSAGE5 = 'There was a problem downloading or unzipping the Stop Forum Spam database. Depending on your settings you only have a minimum of 1 download attempt every 8 hours. Please check your sites error log file for more information.';
-
-?>

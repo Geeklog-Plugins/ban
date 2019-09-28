@@ -1,7 +1,7 @@
 <?php
 
 // +---------------------------------------------------------------------------+
-// | Ban Geeklog Plugin 2.0.0                                                    |
+// | Ban Geeklog Plugin 2.0.0                                                  |
 // +---------------------------------------------------------------------------+
 // | index.php                                                                 |
 // | Administration page.                                                      |
@@ -28,12 +28,13 @@
 // | Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.           |
 // |                                                                           |
 // +---------------------------------------------------------------------------+
-//
 
-require_once ('../../../lib-common.php');
-require_once ('../../auth.inc.php');
+use Geeklog\Input;
 
-if (!SEC_hasRights ('ban.admin')) {
+require_once '../../../lib-common.php';
+require_once '../../auth.inc.php';
+
+if (!SEC_hasRights('ban.admin')) {
     $display = COM_showMessageText($MESSAGE[29], $MESSAGE[30]);
     $display = COM_createHTMLDocument($display, array('pagetitle' => $MESSAGE[30]));
     COM_accessLog("User {$_USER['username']} tried to illegally access the ban administration screen.");
@@ -42,30 +43,29 @@ if (!SEC_hasRights ('ban.admin')) {
 }
 
 /**
-* Displays the ban form 
-*
-* @param    array   $A      Data to display
-* @param    string  $error  Error message to display
-*
-*/ 
-function ban_form($A, $error = false) 
+ * Render the ban form 
+ *
+ * @param   array  $A        Data to display
+ * @param   bool   $isError
+ * @return  string
+ */
+function ban_form($A, $isError = false)
 {
     global $_CONF, $LANG_BAN00, $LANG_ACCESS, $_TABLES, $MESSAGE;
 
     $display = '';
 
-    if ($error) {
-        // Error = 1
+    if ($isError) {
         $display .= COM_showMessageText($LANG_BAN00['error_editor_no_data'], $LANG_BAN00['ban_editor']);
     }
-        
+
     $ban_template = COM_newTemplate(CTL_plugin_templatePath('ban', 'admin'));
     $ban_template->set_file('editor', 'editor.thtml');
 
     $ban_template->set_var('start_block_editor',
             COM_startBlock($LANG_BAN00['ban_editor']), '',
                     COM_getBlockTemplate ('_admin_block', 'header'));
-    
+
     $ban_template->set_var('lang_id',$LANG_BAN00['id']);
     $ban_template->set_var('id', $A['id']);
     $ban_template->set_var('lang_type',$LANG_BAN00['type']);
@@ -73,12 +73,12 @@ function ban_form($A, $error = false)
     $ban_template->set_var('lang_status',$LANG_BAN00['status']);
     $ban_template->set_var('lang_created',$LANG_BAN00['created']);
     $ban_template->set_var('lang_note',$LANG_BAN00['note']);
-    
+
     // Set type
     // REMOTE_ADDR, HTTP_REFERER, HTTP_USER_AGENT, SCRIPT_NAME
     // REMOTE_ADDR_RANGE, REMOTE_ADDR_CIDR, REMOTE_ADDR_REGEX, HTTP_REFERER_REGEX, HTTP_USER_AGENT_REGEX, SCRIPT_NAME_REGEX
     $retval = '';
-    for( $i = 1; $i <= 10; $i++ ) {
+    for ($i = 1; $i <= 10; $i++) {
         switch ($i) {
             case 1:
                 $name = 'REMOTE_ADDR';
@@ -115,61 +115,60 @@ function ban_form($A, $error = false)
                 break;
         }
         $selected = '';    
-        if ($A['bantype'] == $name) {
+        if (isset($A['bantype']) && ($A['bantype'] == $name)) {
             $selected = ' SELECTED';
         }
         $retval .= '<option value="' . $name . '"' . $selected . '>' .  $name . '</option>';
     }
-    $ban_template->set_var('options_type', $retval);    
-    
+    $ban_template->set_var('options_type', $retval);
+
     // Set Status
     $retval = '';
-    if ($A['status'] == '') {
-        $A['status'] = CONST_BAN_STATUS_NORMAL; // Default        
+    if (!isset($A['status']) || ($A['status'] == '')) {
+        $A['status'] = CONST_BAN_STATUS_NORMAL; // Default
     }
-    for( $i = CONST_BAN_STATUS_WHITE; $i <= CONST_BAN_STATUS_TTL_LONG; $i++ ) {
+    for ($i = CONST_BAN_STATUS_WHITE; $i <= CONST_BAN_STATUS_TTL_LONG; $i++) {
         $selected = '';
         if ($A['status'] == $i) {
             $selected = ' SELECTED';
         }
-        
+
         switch ($i) {
             case CONST_BAN_STATUS_TTL_SHORT:
                 $name = $LANG_BAN00['status_ttl_short'];
                 break;
-                
+
             case CONST_BAN_STATUS_TTL_MEDIUM:
                 $name = $LANG_BAN00['status_ttl_medium'];
                 break;
-                
+
             case CONST_BAN_STATUS_TTL_LONG:
                 $name = $LANG_BAN00['status_ttl_long'];
                 break;
-                
+
             case CONST_BAN_STATUS_WHITE:
                 $name = $LANG_BAN00['status_white'];
                 break;
-                
+
             default:
                 $name = $LANG_BAN00['status_normal'];
-                
         }
         $retval .= '<option value="' . $i . '"' . $selected . '>' .  $name . '</option>';
     }
     $ban_template->set_var('options_status', $retval);
-    
+
     // Set Created
-    $ban_template->set_var('created', $A['created']);
-    
+    $ban_template->set_var('created', @$A['created']);
+
     // Set Data
-    $ban_template->set_var('data', $A['data']);
-    
+    $ban_template->set_var('data', @$A['data']);
+
     // Set Note
-    $ban_template->set_var('note', stripslashes($A['note']));
-    
+    $ban_template->set_var('note', stripslashes(@$A['note']));
+
     $ban_template->set_var('lang_save', $LANG_BAN00['save']);
     $ban_template->set_var('lang_cancel', $LANG_BAN00['cancel']);
-    
+
     if ($A['id'] != "0") {
         $ban_template->set_var('allow_delete', true);
         $ban_template->set_var('lang_delete', $LANG_BAN00['delete']);
@@ -179,19 +178,24 @@ function ban_form($A, $error = false)
     }
 
     $ban_template->set_var('end_block',
-            COM_endBlock (COM_getBlockTemplate ('_admin_block', 'footer')));
-    
+            COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer')));
+
     $display .= $ban_template->parse('output','editor');
 
     return $display;
 }
 
+/**
+ * Render ban list
+ *
+ * @return  string
+ */
 function ban_list()
 {
     global $_CONF, $_BAN_CONF, $_TABLES, $_IMAGE_TYPE, $LANG_ADMIN, $LANG_BAN00;
-    
-    require_once( $_CONF['path_system'] . 'lib-admin.php' );
-    
+
+    require_once $_CONF['path_system'] . 'lib-admin.php';
+
     $retval = '';
 
     $header_arr = array(      # dislay 'text' and use table field 'field'
@@ -223,16 +227,15 @@ function ban_list()
     }
 
     $readme_url = $_CONF['site_admin_url'] . '/plugins/ban/readme.html';
-    
+
     $retval .= COM_startBlock($LANG_BAN00['ban_list'], $readme_url,
                                                 COM_getBlockTemplate('_admin_block', 'header'));
-    
-    
+
     $instructions = $LANG_BAN00['instructions'];
     if ($_BAN_CONF['stopforumspam']) {
         $destination = $_CONF['path'] . 'plugins/ban/files/';
         $filename = $_BAN_CONF['stopforumspam_database_name'];
-        
+
         if (file_exists($destination . $filename)) {
             // SFS Database Age as recorded in the DB
             $sfs_last_download_date = DB_getItem($_TABLES['vars'], 'value', "name='ban_last_sfsdownload'"); // put it here to make the check as fast as possible
@@ -240,14 +243,14 @@ function ban_list()
             // Manual Retry date
             $now = DateTime::createFromFormat('U.u', microtime(true));
             $current_date = $now->format("Y-m-d H:i:s");
-            
+
             if ($sfs_last_download_date == '') {
                 $instructions .= $LANG_BAN00['instructions_sfs_not_updated'];
             } else {
                 $last_download = DateTime::createFromFormat('Y-m-d H:i:s.u', $sfs_last_download_date);
                 $last_download->add(new DateInterval('PT' . $_BAN_CONF['stopforumspam_retry_download'] . 'S')); // minus number of days sfs database is allowed to be old
                 $retry_date = $last_download->format("Y-m-d H:i:s");        
-                
+
                 $instructions .= sprintf($LANG_BAN00['instructions_sfs'], date("Y-m-d H:i:s", strtotime($sfs_last_download_date)), $retry_date, $current_date);
             }
 
@@ -256,7 +259,7 @@ function ban_list()
                 $next_download = DateTime::createFromFormat('Y-m-d H:i:s.u', $sfs_last_download_date);
                 $next_download->add(new DateInterval('P' . $_BAN_CONF['stopforumspam_file_date'] . 'D')); // minus number of days sfs database is allowed to be old
                 $auto_date = $next_download->format("Y-m-d H:i:s"); 
-                
+
                 $instructions .= sprintf($LANG_BAN00['instructions_sfs_auto_on'], $auto_date);
             } else {
                 $instructions .= $LANG_BAN00['instructions_sfs_auto_off'];
@@ -279,95 +282,92 @@ function ban_list()
         }
     }
 
-    $HTTP_USER_AGENT = $_SERVER['HTTP_USER_AGENT']; 
+    $HTTP_USER_AGENT = $_SERVER['HTTP_USER_AGENT'];
     $REMOTE_ADDR = $_SERVER['REMOTE_ADDR'];
-    $HTTP_REFERER = ''; // May not always be set if no real referrer. Depends on web server 
+    $HTTP_REFERER = ''; // May not always be set if no real referrer. Depends on web server
     if (isset($_SERVER['HTTP_REFERER'])) {
         $HTTP_REFERER = $_SERVER['HTTP_REFERER'];
     }
     $SCRIPT_NAME = $_SERVER['SCRIPT_NAME'];
     $instructions .= sprintf($LANG_BAN00['instructions_info'], $HTTP_USER_AGENT, $REMOTE_ADDR, $HTTP_REFERER, $SCRIPT_NAME);
-    
+
     $retval .= ADMIN_createMenu($menu_arr, $instructions, plugin_geticon_ban());
-		
+
     $text_arr = array('has_extras'   => true,
                        'form_url' => $_CONF['site_admin_url'] . "/plugins/ban/index.php");
 
-    $query_arr = array('table' => 'ban',
-                       'sql' => "SELECT * "
-                               ."FROM {$_TABLES['ban']} WHERE 1 ",
-                       'query_fields' => array('bantype', 'data', 'note', 'created'),
-                       'default_filter' => "");
-    
+    $query_arr = array(
+        'table'          => 'ban',
+        'sql'            => "SELECT * FROM {$_TABLES['ban']} WHERE 1 ",
+        'query_fields'   => array('bantype', 'data', 'note', 'created'),
+        'default_filter' => ''
+    );
+
     $listoptions = array('chkdelete' => true, 'chkfield' => 'id');
-    
-    $form_arr = array('bottom' => '<input type="hidden" name="mode" value="batchdeleteban"' . XHTML . '>');    
+    $form_arr = array('bottom' => '<input type="hidden" name="mode" value="batchdeleteban"' . XHTML . '>');
 
-    $retval .= ADMIN_list ("ban", "plugin_getListField_ban", $header_arr, $text_arr,
+    $retval .= ADMIN_list("ban", "plugin_getListField_ban", $header_arr, $text_arr,
                             $query_arr, $defsort_arr, '', '', $listoptions, $form_arr);
-    
     $retval .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
-		
-    return $retval;
 
+    return $retval;
 }
 
 /**
-* Displays the Ban Editor
-*
-* @tag          string      ban to edit
-* @mode         string      Mode
-* @error         string      Error number
-*
-*/
-function ban_editor($id, $mode = '', $error = false)
+ * Displays the Ban Editor
+ *
+ * @param   int     $id       ban to edit
+ * @param   string  $mode     Mode
+ * @param   bool    $isError
+ * @return  string
+ */
+function ban_editor($id, $mode = '', $isError = false)
 {
     global $_TABLES;
 
-    if (!empty($id) && $id !=0 && $mode == 'edit') {
+    if (!empty($id) && $id != 0 && $mode === 'edit') {
         $query = DB_query("SELECT * FROM {$_TABLES['ban']} WHERE id = $id");
         $A = DB_fetchArray($query);
-    } elseif ($mode == 'edit') {
-        $A['id'] = 0;
+    } elseif ($mode === 'edit') {
+        $A = array('id' => 0);
     } else {
         $A = $_POST;
         $A['id'] = COM_applyFilter($A['id']);
     }
-    
-    return ban_form($A, $error);
+
+    return ban_form($A, $isError);
 }
 
 /** 
-* Saves a ban to the database
-*
-*/
-// If making changes here make sure to change BAN_for_plugins_ban_ip in function.inc if needed
+ * Saves a ban to the database
+ *
+ * @return  string
+ * @note    If making changes here make sure to change BAN_for_plugins_ban_ip in function.inc if needed
+ */
 function ban_save($id, $type, $status, $data, $note)
 {
     global $_CONF, $LANG_BAN00, $_TABLES;
-    
-    $retval = "";
-    
+ 
+    $retval = '';
+
     if (!empty($type) && !empty($data)) {
         // Clean up the text
-        $data = addslashes($data);
-        $note = addslashes(strip_tags($note));
-        
-        
-            
+        $data = DB_escapeString($data);
+        $note = DB_escapeString(strip_tags($note));
+
         if ($id == 0) {
             // Make sure ban type and data is unique before inserting
             if (DB_count($_TABLES['ban'], array('data', 'bantype'), array($data, $type)) == 0) {
                 DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('$type', '$data', $status, '$note')",1);
             } else {
                 $retval = ban_editor($id, '', true);
-                $retval = COM_createHTMLDocument($retval, array('pagetitle' => $LANG_BAN00['ban_editor']));                
-                
+                $retval = COM_createHTMLDocument($retval, array('pagetitle' => $LANG_BAN00['ban_editor']));
+
                 return $retval;
             }
         } else {
             // Make sure ban type and data is unique before updating
-            $sql = "SELECT COUNT(id) count FROM {$_TABLES['ban']} WHERE bantype = '$type' AND data = '$data' AND id != $id";
+            $sql = "SELECT COUNT(id) count FROM {$_TABLES['ban']} WHERE bantype = '$type' AND data = '$data' AND id <> $id";
             $result = DB_Query($sql);
             $A = DB_fetchArray($result);            
             $count = $A['count'];
@@ -376,38 +376,37 @@ function ban_save($id, $type, $status, $data, $note)
             } else {
                 $retval = ban_editor($id, '', true);
                 $retval = COM_createHTMLDocument($retval, array('pagetitle' => $LANG_BAN00['ban_editor']));                                
-                
+
                 return $retval;
             }
         }
-        
-        $retval = COM_redirect($_CONF['site_admin_url'] . '/plugins/ban/index.php?msg=1');
+
+        COM_redirect($_CONF['site_admin_url'] . '/plugins/ban/index.php?msg=1');
     } else {
         $retval = ban_editor($id, '', 1);
         $retval = COM_createHTMLDocument($retval, array('pagetitle' => $LANG_BAN00['ban_editor']));                                        
     }
-    
+
     return $retval;
 }
 
+/**
+ * @return string
+ */
 function batchdeleteban()
 {
     global $_CONF, $LANG28;
             
     $msg = '';
-    $field_list = array();
-    if (isset($_POST['delitem'])) {
-        $field_list = $_POST['delitem'];
-    }
+    $field_list = Input::fPost('delitem', array());
 
-    if (count($field_list) == 0) {
+    if (!is_array($field_list) || (count($field_list) === 0)) {
         $msg = $LANG28[72] . "<br>";
     }
     $c = 0;
 
-    if (isset($_POST['delitem']) AND is_array($_POST['delitem'])) {
-        foreach($_POST['delitem'] as $delitem) {
-            $delitem = COM_applyFilter($delitem);
+    if (is_array($field_list) && (count($field_list) > 0)) {
+        foreach($field_list as $delitem) {
             if (!ban_delete($delitem, true)) {
                 $msg .= "<strong>{$LANG28[2]} $delitem {$LANG28[70]}</strong><br>\n";
             } else {
@@ -420,7 +419,7 @@ function batchdeleteban()
     // zero where deleted instead of just leaving this message away.
     COM_numberFormat($c); // just in case we have more than 999)..
     $msg .= "{$LANG28[71]}: $c<br>\n";
-    
+ 
     return $msg;
 }
 
@@ -429,84 +428,71 @@ function ban_delete($id, $return_flag = 0)
 {
     global $_CONF, $_TABLES, $_USER;
 
+    $id = (int) $id;
     $sql = "SELECT id 
         FROM {$_TABLES['ban']} 
         WHERE id = $id";
-        
-    $result = DB_query($sql);
 
+    $result = DB_query($sql);
     $A = DB_fetchArray($result);
 
     // Security Check
-    if ((!SEC_hasRights('ban.admin')) OR (DB_numRows ($result) == 0)) {
+    if ((!SEC_hasRights('ban.admin')) || (DB_numRows($result) == 0)) {
         if ($return_flag) {
             return false;
         } else {
-            COM_accessLog ("User {$_USER['username']} tried to illegally delete ban id=$id.");
-            return COM_redirect($_CONF['site_admin_url'] . '/plugins/ban/index.php');
-        }        
-    }    
+            COM_accessLog("User {$_USER['username']} tried to illegally delete ban id=$id.");
+            COM_redirect($_CONF['site_admin_url'] . '/plugins/ban/index.php');
+        }
+    }
 
     // Actual Delete
-    DB_delete ($_TABLES['ban'], 'id', $id);
+    DB_delete($_TABLES['ban'], 'id', $id);
     
     if ($return_flag) {
         return true;
     } else {
-        return COM_redirect($_CONF['site_admin_url'] . '/plugins/ban/index.php?msg=2');
+        COM_redirect($_CONF['site_admin_url'] . '/plugins/ban/index.php?msg=2');
     }
 }
 
-
-
-
 // MAIN
-$mode = '';
-if (isset($_REQUEST['mode'])) {
-    $mode = COM_applyFilter ($_REQUEST['mode']);
-}
+$mode = Input::fRequest('mode', '');
+$id = (int) Input::fRequest('id', 0);
 
-$id = 0;
-if (isset($_REQUEST['id'])) {
-    $id = COM_applyFilter ($_REQUEST['id'], true);
-}
-
-
-
-if (($mode == $LANG_BAN00['delete']) && !empty ($LANG_BAN00['delete'])) {
+if (($mode == $LANG_BAN00['delete']) && !empty($LANG_BAN00['delete'])) {
     if (empty($id)) { 
-        COM_errorLog ('Attempted to delete ban id=' . $id );
-        $display .= COM_redirect($_CONF['site_admin_url'] . '/plugins/ban/index.php');
+        COM_errorLog('Attempted to delete ban id=' . $id );
+        COM_redirect($_CONF['site_admin_url'] . '/plugins/ban/index.php');
     } else {
         $display .= ban_delete($id); 
     }    
-} else if ($mode == 'batchdeleteban') {
+} elseif ($mode === 'batchdeleteban') {
     $msg = batchdeleteban();
-    $display .= COM_redirect($_CONF['site_admin_url'] . '/plugins/ban/index.php?msg=3');     
-} else if ($mode == 'sfs_download') {
+    COM_redirect($_CONF['site_admin_url'] . '/plugins/ban/index.php?msg=3');
+} elseif ($mode === 'sfs_download') {
     if (BAN_sfs_download()) {
-        $display .= COM_redirect($_CONF['site_admin_url'] . '/plugins/ban/index.php?msg=4');     
+        COM_redirect($_CONF['site_admin_url'] . '/plugins/ban/index.php?msg=4');
     } else {
-        $display .= COM_redirect($_CONF['site_admin_url'] . '/plugins/ban/index.php?msg=5');     
+        COM_redirect($_CONF['site_admin_url'] . '/plugins/ban/index.php?msg=5');
     }
-} else if ($mode == 'edit') {
+} elseif ($mode === 'edit') {
     $display = ban_editor($id, $mode);
     $display = COM_createHTMLDocument($display, array('pagetitle' => $LANG_BAN00['ban_editor']));
-} else if (($mode == $LANG_BAN00['save']) && !empty ($LANG_BAN00['save'])) {
+} elseif (($mode == $LANG_BAN00['save']) && !empty($LANG_BAN00['save'])) {
     $display = ban_save(
-        COM_applyFilter($_POST['id'], true),
-        COM_applyFilter($_POST['type']),
-        COM_applyFilter($_POST['status'], true),
-        $_POST['data'],
-        $_POST['note']);                     
+        (int) Input::fPost('id', 0),
+        Input::fPost('type', ''),
+        (int) Input::fPost('status', 0),
+        Input::post('data', ''),
+        Input::post('note', '')
+    );
 } else {
-    if (isset ($_REQUEST['msg'])) {
-        $msg = COM_applyFilter($_REQUEST['msg'], true);
-        if ($msg > 0) {
-            $display = COM_showMessage ($msg, 'ban');
-        }
+    $msg = (int) Input::fRequest('msg', 0);
+    if ($msg > 0) {
+        $display = COM_showMessage($msg, 'ban');
     }
-    
+
     $database_age = '';
     if ($_BAN_CONF['stopforumspam']) {
         $db_location = $_CONF['path'] . 'plugins/ban/files/' . $_BAN_CONF['stopforumspam_database_name'];  
@@ -519,13 +505,10 @@ if (($mode == $LANG_BAN00['delete']) && !empty ($LANG_BAN00['delete'])) {
                 $display .= COM_showMessageText($LANG_BAN00['stopforumspam_note']);
             }
         }
-    }        
-    
+    }
+
     $display .= ban_list();
-    
     $display = COM_createHTMLDocument($display, array('pagetitle' => $LANG_BAN00['ban_list']));
 }
 
 COM_output($display);
-
-?>
