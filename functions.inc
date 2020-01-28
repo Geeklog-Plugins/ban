@@ -899,8 +899,7 @@ function BAN_log( $logentry )
             $timestamp = strftime( "%c" );
             $logfile = $_CONF['path_log'] . 'ban.log';
                    
-            if( !$file = fopen( $logfile, a ))
-            {
+            if (!$file = fopen( $logfile, 'a')) {
                 COM_errorLog($LANG01[33] . $logfile . ' (' . $timestamp . ')',1);
             }
                        
