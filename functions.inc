@@ -560,6 +560,27 @@ function BAN_check()
             } else {
                 $gus_userstats_table = $_BAN_CONF['gus_userstats_table'];
             }
+			
+			// Get Host for IP from GUS record
+			$host = '';
+			$hostInfo = "";
+			$sql = "SELECT host 
+				FROM $gus_userstats_table  
+				WHERE ip = '{$REMOTE_ADDR}' 
+				AND host != '' 
+				LIMIT 1";
+
+			$result = DB_Query($sql);
+			$nrows = DB_numRows($result);
+			if ($nrows == 1) {
+				$A = DB_fetchArray($result);
+				$host = $A['host'];
+				$hostInfo ="($host) "; // Used for logs and emails
+			}
+			$whoIsInfo = "";
+			if (!empty($_BAN_CONF['whois_url'])) {
+				$whoIsInfo = "(" . sprintf($_BAN_CONF['whois_url'], $REMOTE_ADDR) . ") ";  // Used for logs and emails
+			}						
 
             // Check: Referrer in a given time by IP. If they match the text then ban
             if ($_BAN_CONF['gus_referrer'] AND $ans == 0) {
@@ -587,11 +608,13 @@ function BAN_check()
 
                             if ($_BAN_CONF['logging_auto']) {
                                 // BAN_Log("Access Banned because $REMOTE_ADDR has to many referrers in a given time. Added to Ban database.");
-                                BAN_Log("Access Banned because $REMOTE_ADDR has $nrows referrers that match $match in the last {$_BAN_CONF['gus_referrer_time']} seconds. Added to Ban database.");
+                                BAN_Log("Access Banned because $REMOTE_ADDR " . $hostInfo . "has $nrows referrers that match $match in the last {$_BAN_CONF['gus_referrer_time']} seconds. Added to Ban database.");
                             }
 
                             if ($_BAN_CONF['email_auto']) {
-                                BAN_email("Access Banned because $REMOTE_ADDR has $nrows referrers that match $match in the last {$_BAN_CONF['gus_referrer_time']} seconds. Added to Ban database.");
+								$emailText = "Access Banned because $REMOTE_ADDR " . $hostInfo . $whoIsInfo . "has $nrows referrers that match $match in the last {$_BAN_CONF['gus_referrer_time']} seconds. Added to Ban database.";
+								
+                                BAN_email($emailText);
                             }                             
                             
                             break;
@@ -633,18 +656,20 @@ function BAN_check()
                             $nrows = DB_numRows($result);
             
                             if ($_BAN_CONF['gus_url_num'] <= $nrows) {
-                                $ans = 1;
+								$ans = 1;
                                 // IP has to many Referrers in a given time so ban
                                 // DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('REMOTE_ADDR', '{$REMOTE_ADDR}', {$_BAN_CONF['gus_url_status']}, '{$LANG_BAN00['gus_url_note']}')",1);
                                 BAN_insertREMOT_ADDR($REMOTE_ADDR, $_BAN_CONF['gus_url_status'], $LANG_BAN00['gus_url_note']);
         
                                 if ($_BAN_CONF['logging_auto']) {
                                     // BAN_Log("Access Banned because $REMOTE_ADDR has requested to many times a matching page with query string in a given time. Added to Ban database.");
-                                    BAN_Log("Access Banned because $REMOTE_ADDR has requested $url $nrows times in the last {$_BAN_CONF['gus_url_time']} seconds. Added to Ban database.");
+                                    BAN_Log("Access Banned because $REMOTE_ADDR " . $hostInfo . "has requested $url $nrows times in the last {$_BAN_CONF['gus_url_time']} seconds. Added to Ban database.");
                                 }
 
                                 if ($_BAN_CONF['email_auto']) {
-                                    BAN_email("Access Banned because $REMOTE_ADDR has requested $url $nrows times in the last {$_BAN_CONF['gus_url_time']} seconds. Added to Ban database.");
+									$emailText = "Access Banned because $REMOTE_ADDR " . $hostInfo . $whoIsInfo . "has requested $url $nrows times in the last {$_BAN_CONF['gus_url_time']} seconds. Added to Ban database.";
+									
+                                    BAN_email($emailText);
                                 }                             
                                 
                                 $counter = 3; // break out of the array counter as well
@@ -677,11 +702,13 @@ function BAN_check()
                     
                     if ($_BAN_CONF['logging_auto']) {
                         // BAN_Log("Access Banned because $REMOTE_ADDR has to many user agents in a given time. Added to Ban database.");
-                        BAN_Log("Access Banned because $REMOTE_ADDR has $nrows user agents in the last {$_BAN_CONF['gus_user_agent_time']} seconds. Added to Ban database.");
+                        BAN_Log("Access Banned because $REMOTE_ADDR " . $hostInfo . "has $nrows user agents in the last {$_BAN_CONF['gus_user_agent_time']} seconds. Added to Ban database.");
                     }                            
 
                     if ($_BAN_CONF['email_auto']) {
-                        BAN_email("Access Banned because $REMOTE_ADDR has $nrows user agents in the last {$_BAN_CONF['gus_user_agent_time']} seconds. Added to Ban database.");
+						$emailText = "Access Banned because $REMOTE_ADDR " . $hostInfo . $whoIsInfo . "has $nrows user agents in the last {$_BAN_CONF['gus_user_agent_time']} seconds. Added to Ban database.";
+						
+                        BAN_email($emailText);
                     }                            
                 }
                 
@@ -705,14 +732,16 @@ function BAN_check()
                     // IP has visited to many times in a given time so ban
                     // DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('REMOTE_ADDR', '{$REMOTE_ADDR}', {$_BAN_CONF['gus_hits_status']}, '{$LANG_BAN00['gus_hits_note']}')",1);
                     BAN_insertREMOT_ADDR($REMOTE_ADDR, $_BAN_CONF['gus_hits_status'], $LANG_BAN00['gus_hits_note']);
-                    
-                    if ($_BAN_CONF['logging_auto']) {
+					
+					if ($_BAN_CONF['logging_auto']) {
                         // BAN_Log("Access Banned because $REMOTE_ADDR has to many hits in a given time. Added to Ban database.");
                         BAN_Log("Access Banned because $REMOTE_ADDR has {$A['count_ip']} hits in the last {$_BAN_CONF['gus_hits_time']} seconds. Added to Ban database.");
                     }
                     
                     if ($_BAN_CONF['email_auto']) {
-                        BAN_email("Access Banned because $REMOTE_ADDR has {$A['count_ip']} hits in the last {$_BAN_CONF['gus_hits_time']} seconds. Added to Ban database.");
+						$emailText = "Access Banned because $REMOTE_ADDR " . $hostInfo . $whoIsInfo . "has {$A['count_ip']} hits in the last {$_BAN_CONF['gus_hits_time']} seconds. Added to Ban database.";
+						
+                        BAN_email($emailText);
                     }
                 }
             }
