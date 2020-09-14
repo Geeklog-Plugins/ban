@@ -917,13 +917,13 @@ function BAN_matchRange($ip, $range)
 *
 */
 
-function BAN_log( $logentry )
+function BAN_log($logentry)
 {
     global $_CONF, $LANG01, $_BAN_CONF;
     
     if ($_BAN_CONF['logging']) { // Double check if enabled
         if (COM_versionCompare(VERSION, '2.2.1', '>=')) {
-            Log::ban($logEntry);    
+            Log::ban($logentry);    
         } else {
             $timestamp = strftime( "%c" );
             $logfile = $_CONF['path_log'] . 'ban.log';
