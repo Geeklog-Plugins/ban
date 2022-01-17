@@ -158,13 +158,13 @@ function ban_form($A, $isError = false)
     $ban_template->set_var('options_status', $retval);
 
     // Set Created
-    $ban_template->set_var('created', @$A['created']);
+    $ban_template->set_var('created', empty($A['created']) ? '' : $A['created']);
 
     // Set Data
-    $ban_template->set_var('data', @$A['data']);
+    $ban_template->set_var('data', empty($A['data']) ? '' : $A['data']);
 
     // Set Note
-    $ban_template->set_var('note', stripslashes(@$A['note']));
+    $ban_template->set_var('note', empty($A['note']) ? '' : stripslashes($A['note']));
 
     $ban_template->set_var('lang_save', $LANG_BAN00['save']);
     $ban_template->set_var('lang_cancel', $LANG_BAN00['cancel']);
@@ -298,8 +298,8 @@ function ban_list()
 
     $query_arr = array(
         'table'          => 'ban',
-        'sql'            => "SELECT * FROM {$_TABLES['ban']} WHERE 1 ",
-        'query_fields'   => array('bantype', 'data', 'note', 'created'),
+        'sql'            => "SELECT * FROM {$_TABLES['ban']} WHERE (1 = 1) ",
+        'query_fields'   => array('bantype', 'data', 'note'),
         'default_filter' => ''
     );
 
@@ -352,6 +352,7 @@ function ban_save($id, $type, $status, $data, $note)
 
     if (!empty($type) && !empty($data)) {
         // Clean up the text
+        $type = DB_escapeString($type);
         $data = DB_escapeString($data);
         $note = DB_escapeString(strip_tags($note));
 
@@ -367,9 +368,9 @@ function ban_save($id, $type, $status, $data, $note)
             }
         } else {
             // Make sure ban type and data is unique before updating
-            $sql = "SELECT COUNT(id) count FROM {$_TABLES['ban']} WHERE bantype = '$type' AND data = '$data' AND id <> $id";
+            $sql = "SELECT COUNT(id) AS count FROM {$_TABLES['ban']} WHERE bantype = '$type' AND data = '$data' AND id <> $id";
             $result = DB_Query($sql);
-            $A = DB_fetchArray($result);            
+            $A = DB_fetchArray($result);
             $count = $A['count'];
             if ($count == 0) {
                 DB_query("UPDATE {$_TABLES['ban']} SET bantype = '$type', data = '$data', status = $status, note = '$note' WHERE id = $id",1);

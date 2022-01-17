@@ -51,7 +51,7 @@ function plugin_autoinstall_ban($pi_name)
     $info = array(
         'pi_name'         => $pi_name,
         'pi_display_name' => $pi_display_name,
-        'pi_version'      => '2.0.3',
+        'pi_version'      => '2.0.4',
         'pi_gl_version'   => '2.1.1',
         'pi_homepage'     => 'https://github.com/Geeklog-Plugins/ban'
     );
@@ -75,20 +75,12 @@ function plugin_autoinstall_ban($pi_name)
         'ban'
     );
     
-    $requires = array(
-        array(
-               'db' => 'mysql',
-               'version' => '4.1'
-             )
-    );    
-
     $inst_parms = array(
         'info'      => $info,
         'groups'    => $groups,
         'features'  => $features,
         'mappings'  => $mappings,
         'tables'    => $tables,
-        'requires'  => $requires        
     );
 
     return $inst_parms;
@@ -134,5 +126,3 @@ function plugin_compatible_with_this_version_ban($pi_name)
 
     return true;
 }
-
-?>

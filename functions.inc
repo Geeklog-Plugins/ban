@@ -37,6 +37,8 @@ if (strpos(strtolower($_SERVER['PHP_SELF']), 'functions.inc') !== false) {
     die('This file can not be used on its own.');
 }
 
+global $_BAN_CONF;
+
 $plugin_path = $_CONF['path'] . 'plugins/ban/';
 
 

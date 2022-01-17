@@ -1,10 +1,10 @@
-# Geeklog Ban plugin - version 2.0.2
+# Geeklog Ban plugin - version 2.0.4
 
 * Current Maintainers: [Geeklog Community Members](https://github.com/orgs/Geeklog-Plugins/people)
 * Original Author: Tom Willett
-* Release Date: 2018-06-07
+* Release Date: 2022-01-17
 
-**Requires minimum Geeklog version 2.1.1 and MySQL 4.1+**
+**Requires minimum Geeklog version 2.1.1
 
 * Features
 * Changelog
@@ -20,6 +20,7 @@ Note: The Ban Plugin should be the first plugin in the Geeklog Administrator Plu
 The Ban plugin allows you to ban people and bots from your website.  You can ban a bot/visitor by IP, Referer, User Agent or Script Name.  Exact matches and case insensitive regular expressions (regex) are used to give you great flexibility.  The php preg_match function is used to do the regular expressions matches.
 
 As of Ban plugin v2.0.0 new features include the ability to set a Ban Status for a Ban record, use the Stop Forum Spam Database to ban IPs, and Auto Ban visitors based on their previous visits using the GUS Plugin data. All these features have multiple config settings that can be set in the Ban config.php file.
+Ban Plugin v2.0.4 supports PHP 8.0.0 and PostgreSQL, and includes Japanese and Persian language files.
 
 ### Ban Status
 

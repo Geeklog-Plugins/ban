@@ -27,6 +27,8 @@
 // +---------------------------------------------------------------------------+
 //
 
+global $_DB_table_prefix, $_TABLES;
+
 // Ban Record Status - Must be in this order
 define("CONST_BAN_STATUS_WHITE", 0); 
 define("CONST_BAN_STATUS_NORMAL", 1);
@@ -112,5 +114,3 @@ $_BAN_CONF['gus_urls_like'] = array(""); // Like match on end of query string (n
 $_BAN_CONF['gus_url_num'] = 8;
 $_BAN_CONF['gus_url_time'] = 3600; // Number of SECONDS to check back (3600 = 1 hour, 86400 = 1 day)
 $_BAN_CONF['gus_url_status'] = CONST_BAN_STATUS_TTL_LONG;
-
-?>
