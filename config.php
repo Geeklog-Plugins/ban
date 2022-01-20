@@ -36,6 +36,8 @@ define("CONST_BAN_STATUS_TTL_SHORT", 2);
 define("CONST_BAN_STATUS_TTL_MEDIUM", 3);
 define("CONST_BAN_STATUS_TTL_LONG", 4);
 
+$_BAN_CONF = [];
+
 // GUS stats table. We set this since if ban plugin loaded before gus we will not know table name
 // If ban plugin loaded after gus then gus will record banned ips stats
 $_BAN_CONF['gus_userstats_table']  = $_DB_table_prefix . 'gus_userstats';	
