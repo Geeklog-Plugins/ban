@@ -67,7 +67,7 @@ if (file_exists($langfile)) {
 /**
  * Ban plugin table(s)
  */
-$_TABLES['ban']  = $_DB_table_prefix . 'ban';	
+$_TABLES['ban']  = $_DB_table_prefix . 'ban';   
 
 // Validate config options
 if ($_BAN_CONF['stopforumspam_file_date'] < 1) {
@@ -316,15 +316,15 @@ function plugin_user_login_max_invalid_ban($uid)
 {
     global $_BAN_CONF, $LANG_BAN00;    
 
-	if ($_BAN_CONF['max_invalid_logins']) {
+    if ($_BAN_CONF['max_invalid_logins']) {
         $ip = $_SERVER['REMOTE_ADDR'];
         $type = 'REMOTE_ADDR';
         $status = $_BAN_CONF['max_invalid_logins_status'];
         $note = sprintf($LANG_BAN00['ban_invalid_logins_note'], $uid);
-		if (filter_var($ip, FILTER_VALIDATE_IP) !== false) {
+        if (filter_var($ip, FILTER_VALIDATE_IP) !== false) {
             BAN_insertREMOT_ADDR($ip, $status, $note);
-		}
-	}
+        }
+    }
 }
 
 
@@ -334,33 +334,33 @@ function plugin_user_login_max_invalid_ban($uid)
 
 function BAN_for_plugins_check_access()
 {
-	$retval = false;
-	
-	if (SEC_hasRights ('ban.admin')) {
-		$retval = true;
-	}
-	
-	return $retval;
+    $retval = false;
+    
+    if (SEC_hasRights ('ban.admin')) {
+        $retval = true;
+    }
+    
+    return $retval;
 }
 
 function BAN_for_plugins_ban_found($ip)
 {
-	global $_TABLES, $_BAN_CONF;
-	
-	$retval = false;
-	
-	if (BAN_for_plugins_check_access()) {
-		if (filter_var($ip, FILTER_VALIDATE_IP) !== false) {
-			$data = $ip;
-			$type = 'REMOTE_ADDR';
-			$status = $_BAN_CONF['plugins_ban_ip_status'];		
-			if (DB_count($_TABLES['ban'], array('data', 'bantype', 'status'), array($data, $type, $status)) > 0) {
-				$retval = true;
-			}
-		}
-	}
-	
-	return $retval;
+    global $_TABLES, $_BAN_CONF;
+    
+    $retval = false;
+    
+    if (BAN_for_plugins_check_access()) {
+        if (filter_var($ip, FILTER_VALIDATE_IP) !== false) {
+            $data = $ip;
+            $type = 'REMOTE_ADDR';
+            $status = $_BAN_CONF['plugins_ban_ip_status'];      
+            if (DB_count($_TABLES['ban'], array('data', 'bantype', 'status'), array($data, $type, $status)) > 0) {
+                $retval = true;
+            }
+        }
+    }
+    
+    return $retval;
 }
 
 function BAN_for_plugins_ban_ip($ip, $plugin, $ban = true, $note = '')
@@ -370,36 +370,36 @@ function BAN_for_plugins_ban_ip($ip, $plugin, $ban = true, $note = '')
     $retval = false;
     
     if (BAN_for_plugins_check_access()) {
-		if (in_array($plugin, $_PLUGINS) || $plugin == '') { // if $plugin = '' assume core is calling it
-			if (filter_var($ip, FILTER_VALIDATE_IP) !== false) {
-				$data = $ip;
-				$type = 'REMOTE_ADDR';
-				$status = $_BAN_CONF['plugins_ban_ip_status'];
-				
-				if ($ban) {
+        if (in_array($plugin, $_PLUGINS) || $plugin == '') { // if $plugin = '' assume core is calling it
+            if (filter_var($ip, FILTER_VALIDATE_IP) !== false) {
+                $data = $ip;
+                $type = 'REMOTE_ADDR';
+                $status = $_BAN_CONF['plugins_ban_ip_status'];
+                
+                if ($ban) {
                     if ($plugin != '') {
                         $note = sprintf($LANG_BAN00['ban_plugin_note'], $plugin) . $note;
                     }
-					// Clean up the text
-					$note = strip_tags($note);
-					$note = addslashes($note);
-					
-					//DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('$type', '$data', $status, '$note')",1);
+                    // Clean up the text
+                    $note = strip_tags($note);
+                    $note = addslashes($note);
+                    
+                    //DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('$type', '$data', $status, '$note')",1);
                     $retval = BAN_insertREMOT_ADDR($data, $status, $note);
-				} else {
-					
-					if (DB_count($_TABLES['ban'], array('data', 'bantype', 'status'), array($data, $type, $status)) > 0) {
-						DB_query( "DELETE FROM {$_TABLES['ban']} WHERE bantype='$type' AND data='$data' AND status = $status LIMIT 1", 1 );
-						
-						$retval = true;
-					}
-				}
-			}
-		}
-	}
+                } else {
+                    
+                    if (DB_count($_TABLES['ban'], array('data', 'bantype', 'status'), array($data, $type, $status)) > 0) {
+                        DB_query( "DELETE FROM {$_TABLES['ban']} WHERE bantype='$type' AND data='$data' AND status = $status LIMIT 1", 1 );
+                        
+                        $retval = true;
+                    }
+                }
+            }
+        }
+    }
     
     return $retval;
-	
+    
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -562,27 +562,27 @@ function BAN_check()
             } else {
                 $gus_userstats_table = $_BAN_CONF['gus_userstats_table'];
             }
-			
-			// Get Host for IP from GUS record
-			$host = '';
-			$hostInfo = "";
-			$sql = "SELECT host 
-				FROM $gus_userstats_table  
-				WHERE ip = '{$REMOTE_ADDR}' 
-				AND host != '' 
-				LIMIT 1";
+            
+            // Get Host for IP from GUS record
+            $host = '';
+            $hostInfo = "";
+            $sql = "SELECT host 
+                FROM $gus_userstats_table  
+                WHERE ip = '{$REMOTE_ADDR}' 
+                AND host != '' 
+                LIMIT 1";
 
-			$result = DB_Query($sql);
-			$nrows = DB_numRows($result);
-			if ($nrows == 1) {
-				$A = DB_fetchArray($result);
-				$host = $A['host'];
-				$hostInfo ="($host) "; // Used for logs and emails
-			}
-			$whoIsInfo = "";
-			if (!empty($_BAN_CONF['whois_url'])) {
-				$whoIsInfo = "(" . sprintf($_BAN_CONF['whois_url'], $REMOTE_ADDR) . ") ";  // Used for logs and emails
-			}						
+            $result = DB_Query($sql);
+            $nrows = DB_numRows($result);
+            if ($nrows == 1) {
+                $A = DB_fetchArray($result);
+                $host = $A['host'];
+                $hostInfo ="($host) "; // Used for logs and emails
+            }
+            $whoIsInfo = "";
+            if (!empty($_BAN_CONF['whois_url'])) {
+                $whoIsInfo = "(" . sprintf($_BAN_CONF['whois_url'], $REMOTE_ADDR) . ") ";  // Used for logs and emails
+            }                       
 
             // Check: Referrer in a given time by IP. If they match the text then ban
             if ($_BAN_CONF['gus_referrer'] AND $ans == 0) {
@@ -614,8 +614,8 @@ function BAN_check()
                             }
 
                             if ($_BAN_CONF['email_auto']) {
-								$emailText = "Access Banned because $REMOTE_ADDR " . $hostInfo . $whoIsInfo . "has $nrows referrers that match $match in the last {$_BAN_CONF['gus_referrer_time']} seconds. Added to Ban database.";
-								
+                                $emailText = "Access Banned because $REMOTE_ADDR " . $hostInfo . $whoIsInfo . "has $nrows referrers that match $match in the last {$_BAN_CONF['gus_referrer_time']} seconds. Added to Ban database.";
+                                
                                 BAN_email($emailText);
                             }                             
                             
@@ -658,7 +658,7 @@ function BAN_check()
                             $nrows = DB_numRows($result);
             
                             if ($_BAN_CONF['gus_url_num'] <= $nrows) {
-								$ans = 1;
+                                $ans = 1;
                                 // IP has to many Referrers in a given time so ban
                                 // DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('REMOTE_ADDR', '{$REMOTE_ADDR}', {$_BAN_CONF['gus_url_status']}, '{$LANG_BAN00['gus_url_note']}')",1);
                                 BAN_insertREMOT_ADDR($REMOTE_ADDR, $_BAN_CONF['gus_url_status'], $LANG_BAN00['gus_url_note']);
@@ -669,8 +669,8 @@ function BAN_check()
                                 }
 
                                 if ($_BAN_CONF['email_auto']) {
-									$emailText = "Access Banned because $REMOTE_ADDR " . $hostInfo . $whoIsInfo . "has requested $url $nrows times in the last {$_BAN_CONF['gus_url_time']} seconds. Added to Ban database.";
-									
+                                    $emailText = "Access Banned because $REMOTE_ADDR " . $hostInfo . $whoIsInfo . "has requested $url $nrows times in the last {$_BAN_CONF['gus_url_time']} seconds. Added to Ban database.";
+                                    
                                     BAN_email($emailText);
                                 }                             
                                 
@@ -708,8 +708,8 @@ function BAN_check()
                     }                            
 
                     if ($_BAN_CONF['email_auto']) {
-						$emailText = "Access Banned because $REMOTE_ADDR " . $hostInfo . $whoIsInfo . "has $nrows user agents in the last {$_BAN_CONF['gus_user_agent_time']} seconds. Added to Ban database.";
-						
+                        $emailText = "Access Banned because $REMOTE_ADDR " . $hostInfo . $whoIsInfo . "has $nrows user agents in the last {$_BAN_CONF['gus_user_agent_time']} seconds. Added to Ban database.";
+                        
                         BAN_email($emailText);
                     }                            
                 }
@@ -734,15 +734,15 @@ function BAN_check()
                     // IP has visited to many times in a given time so ban
                     // DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('REMOTE_ADDR', '{$REMOTE_ADDR}', {$_BAN_CONF['gus_hits_status']}, '{$LANG_BAN00['gus_hits_note']}')",1);
                     BAN_insertREMOT_ADDR($REMOTE_ADDR, $_BAN_CONF['gus_hits_status'], $LANG_BAN00['gus_hits_note']);
-					
-					if ($_BAN_CONF['logging_auto']) {
+                    
+                    if ($_BAN_CONF['logging_auto']) {
                         // BAN_Log("Access Banned because $REMOTE_ADDR has to many hits in a given time. Added to Ban database.");
                         BAN_Log("Access Banned because $REMOTE_ADDR has {$A['count_ip']} hits in the last {$_BAN_CONF['gus_hits_time']} seconds. Added to Ban database.");
                     }
                     
                     if ($_BAN_CONF['email_auto']) {
-						$emailText = "Access Banned because $REMOTE_ADDR " . $hostInfo . $whoIsInfo . "has {$A['count_ip']} hits in the last {$_BAN_CONF['gus_hits_time']} seconds. Added to Ban database.";
-						
+                        $emailText = "Access Banned because $REMOTE_ADDR " . $hostInfo . $whoIsInfo . "has {$A['count_ip']} hits in the last {$_BAN_CONF['gus_hits_time']} seconds. Added to Ban database.";
+                        
                         BAN_email($emailText);
                     }
                 }
@@ -927,7 +927,11 @@ function BAN_log($logentry)
         if (COM_versionCompare(VERSION, '2.2.1', '>=')) {
             Log::ban($logentry);    
         } else {
-            $timestamp = strftime( "%c" );
+            if (is_callable('COM_strftime')) {
+                $timestamp = COM_strftime( "%c" );
+            } else {
+                $timestamp = strftime( "%c" );
+            }
             $logfile = $_CONF['path_log'] . 'ban.log';
                    
             if (!$file = fopen( $logfile, 'a')) {
@@ -952,7 +956,11 @@ function BAN_email($message)
     global $_CONF, $LANG_BAN00, $_BAN_CONF, $LANG08;
     
     if ($_BAN_CONF['email']) { // Double check if enabled
-        $timestamp = strftime( "%c" );
+        if (is_callable('COM_strftime')) {
+            $timestamp = COM_strftime( "%c" );
+        } else {
+            $timestamp = strftime( "%c" );
+        }
         
         $mailsubject = $_CONF['site_name'] . ' ' . $LANG_BAN00['ip_auto_ban'];
         
@@ -1042,13 +1050,13 @@ function ipcheck_stopforumspam($funcIP, $zbdbfile) {
 
 // Based on the gus function GUS_getEncodedURL to convert urls for the database (since using entities)
 // Because the referrers are stored encoded, we need our URLs to look similar for SQL comparison
-//	- make it look like the referrers by encoding it
-//	- escape '%' for the LIKE clause
+//  - make it look like the referrers by encoding it
+//  - escape '%' for the LIKE clause
 function BAN_getEncodedURL($url) {
-	$encoded_site_url = urlencode(addslashes($url));
-	$encoded_site_url = str_replace('%', '\%', $encoded_site_url);
-	
-	return $encoded_site_url;
+    $encoded_site_url = urlencode(addslashes($url));
+    $encoded_site_url = str_replace('%', '\%', $encoded_site_url);
+    
+    return $encoded_site_url;
 }
 
 // BAN function for download stop forum database
@@ -1078,62 +1086,60 @@ function BAN_sfs_download()
         $now->sub(new DateInterval('PT' . $_BAN_CONF['stopforumspam_retry_download'] . 'S')); // minus number of days sfs database is allowed to be old
 
         $last_download = DateTime::createFromFormat('Y-m-d H:i:s.u', $sfs_last_download_date);
-		
-		if ($last_download !== false) {
-			$last_download->add(new DateInterval('PT' . $_BAN_CONF['stopforumspam_retry_download'] . 'S')); // minus number of days sfs database is allowed to be old
-			$retry_date = $last_download->format("Y-m-d H:i:s"); 
-			
-			if ($retry_date <= $current_date) {
-				//Set latest SFS download attempt
-				DB_query("UPDATE {$_TABLES['vars']} SET value='{$current_date}' WHERE name='ban_last_sfsdownload'");          
-			
-				// Download sfs database zip file
-				$destination = $_CONF['path'] . 'plugins/ban/files/';
-				$source = $_BAN_CONF['stopforumspam_database_location'] . $_BAN_CONF['stopforumspam_database_zip_name'];
-				$filename = $_BAN_CONF['stopforumspam_database_zip_name'];
-				
-				$ch = curl_init();
-				curl_setopt($ch, CURLOPT_URL, $source);
-				curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-				// curl_setopt($ch, CURLOPT_SSLVERSION,3); // Use if file location uses ssl
-				$data = curl_exec ($ch);
-				$error = curl_error($ch); 
-				curl_close ($ch);
-				
-				// Check if error with download via curl
-				if ($error === false) { 
-					COM_errorLog('Ban plugin could not download the Stop Forum Spam database - Curl error: ' . $error, 1);
-				} else {
-					if (is_writable($destination . $filename)) {
-						$file = fopen($destination . $filename, "w+");
-						fputs($file, $data);
-						fclose($file);    
-						
-						// Unzip file
-						$zip = new ZipArchive;
-						if ($zip->open($destination . $filename) === TRUE) {
-							if ($zip->extractTo($destination) === TRUE) {
-								$retval = true;
-							} else {
-								COM_errorLog("Could not unzip Stop Forum Spam database file. File may be corrupted. Make sure source location is correct: $source",1);
-							}
-							$zip->close();
-						} else {
-							COM_errorLog("Could not open zipped Stop Forum Spam database file. File may be corrupted. Make sure source location is correct: $source",1);
-						}
-					} else {
-						COM_errorLog("Please check file/directory permissions. Could not write to file: $destination$filename",1);
-					}
-				}
-			} else {
-				COM_errorLog("Ban plugin did not download SFS database file. It was last downloaded at $sfs_last_download_date and the next time it is allowed to download is $retry_date.",1);
-			}
-		}
+        
+        if ($last_download !== false) {
+            $last_download->add(new DateInterval('PT' . $_BAN_CONF['stopforumspam_retry_download'] . 'S')); // minus number of days sfs database is allowed to be old
+            $retry_date = $last_download->format("Y-m-d H:i:s"); 
+            
+            if ($retry_date <= $current_date) {
+                //Set latest SFS download attempt
+                DB_query("UPDATE {$_TABLES['vars']} SET value='{$current_date}' WHERE name='ban_last_sfsdownload'");          
+            
+                // Download sfs database zip file
+                $destination = $_CONF['path'] . 'plugins/ban/files/';
+                $source = $_BAN_CONF['stopforumspam_database_location'] . $_BAN_CONF['stopforumspam_database_zip_name'];
+                $filename = $_BAN_CONF['stopforumspam_database_zip_name'];
+                
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, $source);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+                // curl_setopt($ch, CURLOPT_SSLVERSION,3); // Use if file location uses ssl
+                $data = curl_exec ($ch);
+                $error = curl_error($ch); 
+                curl_close ($ch);
+                
+                // Check if error with download via curl
+                if ($error === false) { 
+                    COM_errorLog('Ban plugin could not download the Stop Forum Spam database - Curl error: ' . $error, 1);
+                } else {
+                    if (is_writable($destination . $filename)) {
+                        $file = fopen($destination . $filename, "w+");
+                        fputs($file, $data);
+                        fclose($file);    
+                        
+                        // Unzip file
+                        $zip = new ZipArchive;
+                        if ($zip->open($destination . $filename) === TRUE) {
+                            if ($zip->extractTo($destination) === TRUE) {
+                                $retval = true;
+                            } else {
+                                COM_errorLog("Could not unzip Stop Forum Spam database file. File may be corrupted. Make sure source location is correct: $source",1);
+                            }
+                            $zip->close();
+                        } else {
+                            COM_errorLog("Could not open zipped Stop Forum Spam database file. File may be corrupted. Make sure source location is correct: $source",1);
+                        }
+                    } else {
+                        COM_errorLog("Please check file/directory permissions. Could not write to file: $destination$filename",1);
+                    }
+                }
+            } else {
+                COM_errorLog("Ban plugin did not download SFS database file. It was last downloaded at $sfs_last_download_date and the next time it is allowed to download is $retry_date.",1);
+            }
+        }
     } else {
         COM_errorLog('Ban plugin could not download the Stop Forum Spam database file because the curl PHP extension is missing.',1);
     }   
     
     return $retval;
 }
-
-?>
