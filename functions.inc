@@ -77,6 +77,10 @@ if ($_BAN_CONF['stopforumspam_retry_download'] < 28800) { // Cannot be less than
     $_BAN_CONF['stopforumspam_file_date'] = 28800;
 }
 
+// Current status of visitor IP
+global $_BAN_IP_STATUS;
+$_BAN_IP_STATUS = CONST_BAN_IP_STATUS_NOT_FLAGGED;
+
 // Make sure files match db install before we do ban check
 $installed_version = DB_getItem($_TABLES['plugins'], 'pi_version',
                                 "pi_name = 'ban'");
@@ -327,6 +331,60 @@ function plugin_user_login_max_invalid_ban($uid)
     }
 }
 
+function plugin_geticon_ban ()
+{
+    global $_CONF, $LANG_BAN00;
+
+    return $_CONF['site_admin_url'] . '/plugins/ban/images/ban.png';
+}
+
+function plugin_getListField_ban($fieldname, $fieldvalue, $A, $icon_arr) {
+    global $_CONF, $_AUTO_CONF, $LANG_ACCESS, $LANG_BAN00;
+
+    switch($fieldname) {
+        case "edit":
+            if (SEC_hasRights('ban.admin')) {
+                $retval = "<a href=\"{$_CONF['site_admin_url']}/plugins/ban/index.php?mode=edit&amp;id={$A['id']}\">{$icon_arr['edit']}</a>";
+            }
+            break;
+        case "note":
+            $retval = '';
+            if (trim($A['note']) != '') {
+                $retval = COM_getTooltip('', stripslashes($A['note']), '', $LANG_BAN00['note'],'information');
+            }
+            break;
+        case "type":
+            $retval = $A['bantype'];
+            break;
+        case "status":
+            switch ($A['status']) {
+                case CONST_BAN_STATUS_TTL_SHORT:
+                    $retval = $LANG_BAN00['status_ttl_short'];
+                    break;
+                    
+                case CONST_BAN_STATUS_TTL_MEDIUM:
+                    $retval = $LANG_BAN00['status_ttl_medium'];
+                    break;
+                    
+                case CONST_BAN_STATUS_TTL_LONG:
+                    $retval = $LANG_BAN00['status_ttl_long'];
+                    break;
+                    
+                case CONST_BAN_STATUS_WHITE:
+                    $retval = $LANG_BAN00['status_white'];
+                    break;
+                    
+                default:
+                    $retval = $LANG_BAN00['status_normal'];
+                    
+            }
+            break;
+        default:
+            $retval = $fieldvalue;
+            break;
+    }
+    return $retval;
+}
 
 //////////////////////////////////////////////////////////////////////////////////
 // BAN API for other Plugins                                                    //
@@ -407,13 +465,79 @@ function BAN_for_plugins_ban_ip($ip, $plugin, $ban = true, $note = '')
 //////////////////////////////////////////////////////////////////////////////////
 
 
+/**
+ * Gives plugins a chance to handle the user's speeding (error limit)
+ *
+ * @param  string  $type      speeding type e.g.  'login', 'submit', 'error-404', 'error-spam', 'error-speedlimit'
+ * @param  string  $property  in most cases, the real IP address (not anonymized) of the user
+ * @param  int     $last      seconds since last speeding.  -1 means  previous speeding for the type is unknown
+ * @return void
+ * @since  Geeklog 2.2.2
+ */
+function plugin_onSpeeding_ban($type, $property, $last)
+{
+	global $_TABLES, $_BAN_CONF, $_PLUGINS, $_TABLES, $LANG_BAN00, $_BAN_IP_STATUS, $_CONF;
+
+	// Check if on White List of IPs first before banning. This is already done in BAN_check which is run when functions.inc is loaded
+	if ($_BAN_CONF['error_limit'] && $last > 0 && $_BAN_IP_STATUS != CONST_BAN_IP_STATUS_WHITE) {
+		$REMOTE_ADDR = $_SERVER['REMOTE_ADDR'];
+		
+		$maxLimit = '';
+		$timeWindow = '';
+		if ($type == 'error-403') {
+			$maxLimit = $_CONF['speedlimit_max_error-403'];
+			$timeWindow = $_CONF['speedlimit_window_error-403'];
+		} elseif ($type == 'error-spam') {
+			$maxLimit = $_CONF['speedlimit_max_error-spam'];
+			$timeWindow = $_CONF['speedlimit_window_error-spam'];
+		} elseif ($type == 'error-404') {
+			$maxLimit = $_CONF['speedlimit_max_error-404'];
+			$timeWindow = $_CONF['speedlimit_window_error-404'];
+		} elseif ($type == 'error-speedlimit') {
+			$maxLimit = $_CONF['speedlimit_max_error-speedlimit'];
+			$timeWindow = $_CONF['speedlimit_window_error-speedlimit'];			
+		}
+		
+		if (!empty($maxLimit) && !empty($timeWindow)) {
+
+			$note = sprintf($LANG_BAN00['ban_error_limit_note'], $type);
+			// Clean up the text
+			$note = strip_tags($note);
+			$note = addslashes($note);				
+			BAN_insertREMOT_ADDR($property, $_BAN_CONF['error_limit_status'], $note);
+			
+			if ($_BAN_CONF['logging_error'] || $_BAN_CONF['email_error']) {
+				$hostInfo = BAN_hostInfo();
+			}			
+
+			if ($_BAN_CONF['logging_error']) {
+				BAN_Log("Access Banned because $REMOTE_ADDR " . $hostInfo . "triggered the '$type' error limit. The limit only allows the maximum of {$_CONF['speedlimit_max_error-404']} of these errors in the last {$_CONF['speedlimit_window_error-404']} seconds. Added to Ban database.");
+			}
+
+			if ($_BAN_CONF['email_error']) {
+				$emailText = "Access Banned because $REMOTE_ADDR " . $hostInfo . BAN_whoIsInfo($REMOTE_ADDR) . "triggered the '$type' error limit. The limit only allows the maximum of {$_CONF['speedlimit_max_error-404']} of these errors in the last {$_CONF['speedlimit_window_error-404']} seconds. Added to Ban database.";
+				
+				BAN_email($emailText);
+			}  
+		
+			if ($_BAN_CONF['page'] != '') {
+				echo COM_redirect($_BAN_CONF['page']);
+				die();
+			} else {
+				die();
+			}		
+		}
+	}
+}
+
+
 /*
 * Check for banned websites
 */
 
 function BAN_check()
 {
-    global $_TABLES, $_BAN_CONF, $_PLUGINS, $_TABLES, $LANG_BAN00, $_CONF;
+    global $_TABLES, $_BAN_CONF, $_PLUGINS, $_TABLES, $LANG_BAN00, $_BAN_IP_STATUS, $_CONF;
     
     $HTTP_USER_AGENT = $_SERVER['HTTP_USER_AGENT']; 
     $REMOTE_ADDR = $_SERVER['REMOTE_ADDR'];
@@ -426,7 +550,7 @@ function BAN_check()
     $current_date = date("Y-m-d H:i:s");
     $dateinsec = strtotime($current_date);
     
-    $ans = 0; // flag for if anything is tripped (0 = not banned, 1 = banned, 2 = white)
+    $ans = CONST_BAN_IP_STATUS_NOT_FLAGGED; // flag for if any check is tripped
 
     // ***********************
     // Have split up the checking of records like this (with more ban types that separate exact match and regex) to speed up ban check
@@ -461,10 +585,10 @@ function BAN_check()
             
             // quit on first positive match
             if ($status == CONST_BAN_STATUS_WHITE) {
-                $ans = 2; // White Status
+                $ans = CONST_BAN_IP_STATUS_WHITE;
                 
             } else {
-                $ans = 1; 
+                $ans = CONST_BAN_IP_STATUS_BANNED; 
                 
                 if ($_BAN_CONF['logging_db']) {
                     BAN_Log('Access Banned because ' . $A['bantype'] . " equals {$A['data']}");
@@ -478,7 +602,7 @@ function BAN_check()
     // ***********************
     // Now Check for ranges and regular expressions (regex) REMOTE_ADDR_RANGE, REMOTE_ADDR_CIDR, REMOTE_ADDR_REGEX, HTTP_REFERER_REGEX, HTTP_USER_AGENT_REGEX, SCRIPT_NAME_REGEX
     // Order by status first (so white list is first) 
-    if ($ans == 0) {
+    if ($ans == CONST_BAN_IP_STATUS_NOT_FLAGGED) {
         $sql = "SELECT bantype, data, status FROM {$_TABLES['ban']} 
             WHERE bantype = 'REMOTE_ADDR_RANGE' OR bantype = 'REMOTE_ADDR_CIDR' OR bantype = 'REMOTE_ADDR_REGEX' OR bantype = 'HTTP_REFERER_REGEX' OR bantype = 'HTTP_USER_AGENT_REGEX' OR bantype = 'SCRIPT_NAME_REGEX' 
             ORDER BY status ASC";
@@ -517,11 +641,11 @@ function BAN_check()
             if ($matches) {
                 // quit on first positive match
                 if ($status == CONST_BAN_STATUS_WHITE) {
-                    $ans = 2; // White Status
+                    $ans = CONST_BAN_IP_STATUS_WHITE;
                     
                     break;
                 } else {
-                    $ans = 1; 
+                    $ans = CONST_BAN_IP_STATUS_BANNED; 
                     
                     if ($_BAN_CONF['logging_db']) {
                         BAN_Log('Access Banned because ' . $A['bantype'] . " matches {$A['data']}");
@@ -535,11 +659,11 @@ function BAN_check()
     
     // ***********************
     // Check stop forum spam banned ips list as long as $ans not tripped (white list or other wise)        
-    if ($_BAN_CONF['stopforumspam'] AND $ans == 0) {
+    if ($_BAN_CONF['stopforumspam'] AND $ans == CONST_BAN_IP_STATUS_NOT_FLAGGED) {
         $db_location = $_CONF['path'] . 'plugins/ban/files/bannedips.csv';
         $banned_ip_count = ipcheck_stopforumspam($REMOTE_ADDR, $db_location);
         if ($banned_ip_count >= 1){
-            $ans = 1; 
+            $ans = CONST_BAN_IP_STATUS_BANNED; 
             
             // We know ip not on white list since it did not trip above
             if ($_BAN_CONF['logging_sfs']) {
@@ -552,40 +676,11 @@ function BAN_check()
     // Auto Ban
     // Check IP for bad behavior. If detected then ban ip and add to DB
     // This process is expensive in terms of server resources
-    if ($_BAN_CONF['ban_auto'] AND $ans == 0) { // Don't need to autoban if already banned or on whitelist
+    if ($_BAN_CONF['ban_auto'] AND $ans == CONST_BAN_IP_STATUS_NOT_FLAGGED) { // Don't need to autoban if already banned or on whitelist
 
         if (in_array("gus", $_PLUGINS)) {
-            // Find GUS stats table. We set this since if ban plugin loaded before gus we will not know table name
-            // If ban plugin loaded after gus then gus will record banned ips stats
-            if (isset($_TABLES['gus_userstats'])) {
-                $gus_userstats_table = $_TABLES['gus_userstats'];
-            } else {
-                $gus_userstats_table = $_BAN_CONF['gus_userstats_table'];
-            }
-            
-            // Get Host for IP from GUS record
-            $host = '';
-            $hostInfo = "";
-            $sql = "SELECT host 
-                FROM $gus_userstats_table  
-                WHERE ip = '{$REMOTE_ADDR}' 
-                AND host != '' 
-                LIMIT 1";
-
-            $result = DB_Query($sql);
-            $nrows = DB_numRows($result);
-            if ($nrows == 1) {
-                $A = DB_fetchArray($result);
-                $host = $A['host'];
-                $hostInfo ="($host) "; // Used for logs and emails
-            }
-            $whoIsInfo = "";
-            if (!empty($_BAN_CONF['whois_url'])) {
-                $whoIsInfo = "(" . sprintf($_BAN_CONF['whois_url'], $REMOTE_ADDR) . ") ";  // Used for logs and emails
-            }                       
-
             // Check: Referrer in a given time by IP. If they match the text then ban
-            if ($_BAN_CONF['gus_referrer'] AND $ans == 0) {
+            if ($_BAN_CONF['gus_referrer'] AND $ans == CONST_BAN_IP_STATUS_NOT_FLAGGED) {
                 $new_date = $dateinsec - $_BAN_CONF['gus_referrer_time'];
                 $new_date = date('Y-m-d H:i:s', $new_date);
                 
@@ -603,10 +698,14 @@ function BAN_check()
                         $nrows = DB_numRows($result);
         
                         if ($_BAN_CONF['gus_referrer_num'] <= $nrows) {
-                            $ans = 1;
+                            $ans = CONST_BAN_IP_STATUS_BANNED;
                             // IP has to many Referrers in a given time so ban
                             // DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('REMOTE_ADDR', '{$REMOTE_ADDR}', {$_BAN_CONF['gus_referrer_status']}, '{$LANG_BAN00['gus_referrer_note']}')",1);
                             BAN_insertREMOT_ADDR($REMOTE_ADDR, $_BAN_CONF['gus_referrer_status'], $LANG_BAN00['gus_referrer_note']);
+							
+							if ($_BAN_CONF['logging_auto'] || $_BAN_CONF['email_auto']) {
+								$hostInfo = BAN_hostInfo();
+							}
 
                             if ($_BAN_CONF['logging_auto']) {
                                 // BAN_Log("Access Banned because $REMOTE_ADDR has to many referrers in a given time. Added to Ban database.");
@@ -614,7 +713,7 @@ function BAN_check()
                             }
 
                             if ($_BAN_CONF['email_auto']) {
-                                $emailText = "Access Banned because $REMOTE_ADDR " . $hostInfo . $whoIsInfo . "has $nrows referrers that match $match in the last {$_BAN_CONF['gus_referrer_time']} seconds. Added to Ban database.";
+                                $emailText = "Access Banned because $REMOTE_ADDR " . $hostInfo . BAN_whoIsInfo($REMOTE_ADDR) . "has $nrows referrers that match $match in the last {$_BAN_CONF['gus_referrer_time']} seconds. Added to Ban database.";
                                 
                                 BAN_email($emailText);
                             }                             
@@ -627,7 +726,7 @@ function BAN_check()
             }
 
             // Check: page and query string in a given time by IP. If they match the text then ban
-            if ($_BAN_CONF['gus_url'] AND $ans == 0) {
+            if ($_BAN_CONF['gus_url'] AND $ans == CONST_BAN_IP_STATUS_NOT_FLAGGED) {
                 $new_date = $dateinsec - $_BAN_CONF['gus_url_time'];
                 $new_date = date('Y-m-d H:i:s', $new_date);
                 
@@ -658,10 +757,14 @@ function BAN_check()
                             $nrows = DB_numRows($result);
             
                             if ($_BAN_CONF['gus_url_num'] <= $nrows) {
-                                $ans = 1;
+                                $ans = CONST_BAN_IP_STATUS_BANNED;
                                 // IP has to many Referrers in a given time so ban
                                 // DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('REMOTE_ADDR', '{$REMOTE_ADDR}', {$_BAN_CONF['gus_url_status']}, '{$LANG_BAN00['gus_url_note']}')",1);
                                 BAN_insertREMOT_ADDR($REMOTE_ADDR, $_BAN_CONF['gus_url_status'], $LANG_BAN00['gus_url_note']);
+								
+								if ($_BAN_CONF['logging_auto'] || $_BAN_CONF['email_auto']) {
+									$hostInfo = BAN_hostInfo();
+								}								
         
                                 if ($_BAN_CONF['logging_auto']) {
                                     // BAN_Log("Access Banned because $REMOTE_ADDR has requested to many times a matching page with query string in a given time. Added to Ban database.");
@@ -669,7 +772,7 @@ function BAN_check()
                                 }
 
                                 if ($_BAN_CONF['email_auto']) {
-                                    $emailText = "Access Banned because $REMOTE_ADDR " . $hostInfo . $whoIsInfo . "has requested $url $nrows times in the last {$_BAN_CONF['gus_url_time']} seconds. Added to Ban database.";
+                                    $emailText = "Access Banned because $REMOTE_ADDR " . $hostInfo . BAN_whoIsInfo($REMOTE_ADDR) . "has requested $url $nrows times in the last {$_BAN_CONF['gus_url_time']} seconds. Added to Ban database.";
                                     
                                     BAN_email($emailText);
                                 }                             
@@ -683,7 +786,7 @@ function BAN_check()
             }
             
             // Check: Number of user agents in a given time by IP
-            if ($_BAN_CONF['gus_user_agent'] AND $ans == 0) {
+            if ($_BAN_CONF['gus_user_agent'] AND $ans == CONST_BAN_IP_STATUS_NOT_FLAGGED) {
                 $new_date = $dateinsec - $_BAN_CONF['gus_user_agent_time'];
                 $new_date = date('Y-m-d H:i:s', $new_date);
     
@@ -697,18 +800,22 @@ function BAN_check()
                 $nrows = DB_numRows($result);
 
                 if ($_BAN_CONF['gus_user_agent_num'] <= $nrows) {
-                    $ans = 1;
+                    $ans = CONST_BAN_IP_STATUS_BANNED;
                     // IP has to many user agents in a given time so ban
                     // DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('REMOTE_ADDR', '{$REMOTE_ADDR}', {$_BAN_CONF['gus_user_agent_status']}, '{$LANG_BAN00['gus_user_agent_note']}')",1);
                     BAN_insertREMOT_ADDR($REMOTE_ADDR, $_BAN_CONF['gus_user_agent_status'], $LANG_BAN00['gus_user_agent_note']);
                     
+					if ($_BAN_CONF['logging_auto'] || $_BAN_CONF['email_auto']) {
+						$hostInfo = BAN_hostInfo();
+					}					
+					
                     if ($_BAN_CONF['logging_auto']) {
                         // BAN_Log("Access Banned because $REMOTE_ADDR has to many user agents in a given time. Added to Ban database.");
                         BAN_Log("Access Banned because $REMOTE_ADDR " . $hostInfo . "has $nrows user agents in the last {$_BAN_CONF['gus_user_agent_time']} seconds. Added to Ban database.");
                     }                            
 
                     if ($_BAN_CONF['email_auto']) {
-                        $emailText = "Access Banned because $REMOTE_ADDR " . $hostInfo . $whoIsInfo . "has $nrows user agents in the last {$_BAN_CONF['gus_user_agent_time']} seconds. Added to Ban database.";
+                        $emailText = "Access Banned because $REMOTE_ADDR " . $hostInfo . BAN_whoIsInfo($REMOTE_ADDR) . "has $nrows user agents in the last {$_BAN_CONF['gus_user_agent_time']} seconds. Added to Ban database.";
                         
                         BAN_email($emailText);
                     }                            
@@ -717,7 +824,7 @@ function BAN_check()
             }
             
             // Check: Number of hits in a certain time period for ip
-            if ($_BAN_CONF['gus_hits'] AND $ans == 0) {
+            if ($_BAN_CONF['gus_hits'] AND $ans == CONST_BAN_IP_STATUS_NOT_FLAGGED) {
                 $new_date = $dateinsec - $_BAN_CONF['gus_hits_time'];
                 $new_date = date('Y-m-d H:i:s', $new_date);
     
@@ -730,18 +837,22 @@ function BAN_check()
                 $A = DB_fetchArray ($result);
 
                 if ($_BAN_CONF['gus_hits_num'] <= $A['count_ip']) {
-                    $ans = 1;
+                    $ans = CONST_BAN_IP_STATUS_BANNED;
                     // IP has visited to many times in a given time so ban
                     // DB_query("INSERT INTO {$_TABLES['ban']} (bantype, data, status, note) VALUES ('REMOTE_ADDR', '{$REMOTE_ADDR}', {$_BAN_CONF['gus_hits_status']}, '{$LANG_BAN00['gus_hits_note']}')",1);
                     BAN_insertREMOT_ADDR($REMOTE_ADDR, $_BAN_CONF['gus_hits_status'], $LANG_BAN00['gus_hits_note']);
                     
+					if ($_BAN_CONF['logging_auto'] || $_BAN_CONF['email_auto']) {
+						$hostInfo = BAN_hostInfo();
+					}					
+					
                     if ($_BAN_CONF['logging_auto']) {
                         // BAN_Log("Access Banned because $REMOTE_ADDR has to many hits in a given time. Added to Ban database.");
                         BAN_Log("Access Banned because $REMOTE_ADDR has {$A['count_ip']} hits in the last {$_BAN_CONF['gus_hits_time']} seconds. Added to Ban database.");
                     }
                     
                     if ($_BAN_CONF['email_auto']) {
-                        $emailText = "Access Banned because $REMOTE_ADDR " . $hostInfo . $whoIsInfo . "has {$A['count_ip']} hits in the last {$_BAN_CONF['gus_hits_time']} seconds. Added to Ban database.";
+                        $emailText = "Access Banned because $REMOTE_ADDR " . $hostInfo . BAN_whoIsInfo($REMOTE_ADDR) . "has {$A['count_ip']} hits in the last {$_BAN_CONF['gus_hits_time']} seconds. Added to Ban database.";
                         
                         BAN_email($emailText);
                     }
@@ -751,7 +862,7 @@ function BAN_check()
     }
     
     // TTL
-    if ($_BAN_CONF['ban_auto'] AND $ans == 0) {
+    if ($_BAN_CONF['ban_auto'] AND $ans == CONST_BAN_IP_STATUS_NOT_FLAGGED) {
         // Figure out if we need to do ttl check. Check last time it was run.
         $new_date = $dateinsec - ($_BAN_CONF['ban_ttl_check'] * 60);
         $new_date = date('Y-m-d H:i:s', $new_date);
@@ -784,26 +895,38 @@ function BAN_check()
         }
     }
     
-    if ($ans == 1) { // Something has triggered the ban so... (0 = not banned, 1 = banned, 2 = white)   
+    if ($ans == CONST_BAN_IP_STATUS_BANNED) { // Something has triggered the ban so... 
         if ($_BAN_CONF['page'] != '') {
             echo COM_redirect($_BAN_CONF['page']);
             die();
         } else {
             die();
         }
-    } elseif ($ans == 2) {
-        // White listed so exit check (will do anyways since at bottom of function)
-        return;
+    } elseif ($ans == CONST_BAN_IP_STATUS_WHITE) {
+        // White listed so continue to end of function
+	} else {
+		// IP Passed all checks
+		$ans = CONST_BAN_IP_STATUS_PASSED;
     }
+	
+	$_BAN_IP_STATUS = $ans;
 }
 
 /**
  * Used for function.inc to insert bans from other plugins and auto bans. Ban type must be REMOTE_ADDR
+ * @param   string  $data  	IP address to check
+ * @param   string  $status Either  CONST_BAN_STATUS_WHITE (0), CONST_BAN_STATUS_NORMAL (1), 
+					CONST_BAN_STATUS_TTL_SHORT (2), CONST_BAN_STATUS_TTL_MEDIUM (3), 
+					CONST_BAN_STATUS_TTL_LONG (4)
+ * @param   string  $note  	Reason for record (not required)
+ * @return  boolean true if ban record inserted, else false
+ 
+
  */
 function BAN_insertREMOT_ADDR($data, $status, $note = '')
 {
     global $_TABLES;
-    
+
     // Confirm Ban doesn't exist first for exact data (ip or range, etc.. If ip is in range will not catch match)
     // If white found then will not insert
     $type = 'REMOTE_ADDR';
@@ -965,72 +1088,68 @@ function BAN_email($message)
         $mailsubject = $_CONF['site_name'] . ' ' . $LANG_BAN00['ip_auto_ban'];
         
         $mailbody = "$timestamp - $message \n";
-
-        $mailbody .= "\n------------------------------\n";
-        $mailbody .= "\n$LANG08[34]\n";
-        $mailbody .= "\n------------------------------\n";
+		
+		if (COM_versionCompare(VERSION, '2.2.2', '<')) {
+			$mailbody .= "\n------------------------------\n";
+			$mailbody .= "\n$LANG08[34]\n";
+			$mailbody .= "\n------------------------------\n";
+		}
         
         $retval = COM_mail($_CONF['site_mail'], $mailsubject, $mailbody);
     }
     
 }
 
-function plugin_geticon_ban ()
+// Create Host Info for emails and log records
+function BAN_hostInfo() 
 {
-    global $_CONF, $LANG_BAN00;
+	global $_BAN_CONF, $_PLUGINS, $_TABLES;
+	
+	$hostInfo = "";
+	
+	if (in_array("gus", $_PLUGINS)) {
+		// Find GUS stats table. We set this since if ban plugin loaded before gus we will not know table name
+		// If ban plugin loaded after gus then gus will record banned ips stats
+		if (isset($_TABLES['gus_userstats'])) {
+			$gus_userstats_table = $_TABLES['gus_userstats'];
+		} else {
+			$gus_userstats_table = $_BAN_CONF['gus_userstats_table'];
+		}
+		
+		// Get Host for IP from GUS record
+		$sql = "SELECT host 
+			FROM $gus_userstats_table  
+			WHERE ip = '{$REMOTE_ADDR}' 
+			AND host != '' 
+			LIMIT 1";
 
-    return $_CONF['site_admin_url'] . '/plugins/ban/images/ban.png';
+		$result = DB_Query($sql);
+		$nrows = DB_numRows($result);
+		if ($nrows == 1) {
+			$A = DB_fetchArray($result);
+			$host = $A['host'];
+			$hostInfo ="($host) "; 
+		}
+	}
+	
+	return $hostInfo;
 }
 
-function plugin_getListField_ban($fieldname, $fieldvalue, $A, $icon_arr) {
-    global $_CONF, $_AUTO_CONF, $LANG_ACCESS, $LANG_BAN00;
-
-    switch($fieldname) {
-        case "edit":
-            if (SEC_hasRights('ban.admin')) {
-                $retval = "<a href=\"{$_CONF['site_admin_url']}/plugins/ban/index.php?mode=edit&amp;id={$A['id']}\">{$icon_arr['edit']}</a>";
-            }
-            break;
-        case "note":
-            $retval = '';
-            if (trim($A['note']) != '') {
-                $retval = COM_getTooltip('', stripslashes($A['note']), '', $LANG_BAN00['note'],'information');
-            }
-            break;
-        case "type":
-            $retval = $A['bantype'];
-            break;
-        case "status":
-            switch ($A['status']) {
-                case CONST_BAN_STATUS_TTL_SHORT:
-                    $retval = $LANG_BAN00['status_ttl_short'];
-                    break;
-                    
-                case CONST_BAN_STATUS_TTL_MEDIUM:
-                    $retval = $LANG_BAN00['status_ttl_medium'];
-                    break;
-                    
-                case CONST_BAN_STATUS_TTL_LONG:
-                    $retval = $LANG_BAN00['status_ttl_long'];
-                    break;
-                    
-                case CONST_BAN_STATUS_WHITE:
-                    $retval = $LANG_BAN00['status_white'];
-                    break;
-                    
-                default:
-                    $retval = $LANG_BAN00['status_normal'];
-                    
-            }
-            break;
-        default:
-            $retval = $fieldvalue;
-            break;
-    }
-    return $retval;
+// Create Who Is Info for emails and log records
+function BAN_whoIsInfo($ipAddress) 
+{
+	global $_BAN_CONF;
+	
+	$whoIsInfo = "";
+	
+	if (!empty($_BAN_CONF['whois_url'])) {
+		$whoIsInfo = "(" . sprintf($_BAN_CONF['whois_url'], $ipAddress) . ") ";  
+	}
+	
+	return $whoIsInfo;
 }
 
-// *FUNCTION
+// FUNCTION
 // ipcheckdb3($funcIP, $zbdbfile)
 // check database $zbdbfile for existance of $funcIP, return count.
 // *** IP MUST PRECEEDED AND FOLLOWED BY A COMMA! ***

@@ -74,8 +74,10 @@ $LANG_BAN00 = array (
     'status_white'          => 'White',
     
     'ban_plugin_note'		=> 'Banned by Plugin %s. ', 
+	
+	'ban_error_limit_note'	=> "Banned by reaching error limit for type '%s'.", 
     
-    'ban_invalid_logins_note'		=> 'Max number of invalid logins reached for user id: %s', // specify id since user cannot change that
+	'ban_invalid_logins_note' => 'Max number of invalid logins reached for user id: %s', // specify id since user cannot change that
     
     'ip_auto_ban'           => 'IP Auto Ban',
     

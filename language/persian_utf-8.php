@@ -72,6 +72,8 @@ $LANG_BAN00 = array (
     'status_white'          => 'سفید',
     
     'ban_plugin_note'		=> 'ممنوع شده توسط افزونه %s.', 
+	
+	'ban_error_limit_note'	=> "Banned by reaching error limit for type '%s'.", 
     
     'ban_invalid_logins_note'		=> 'حداکثر تعداد ورود های نامعتبر به سر رسیده برای شناسه کاربر: %s', // specify id since user cannot change that
     

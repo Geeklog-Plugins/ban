@@ -77,7 +77,9 @@ $LANG_BAN00 = array (
     
     'ban_plugin_note'		=> 'プラグイン%sが禁止', 
     
-    'ban_invalid_logins_note'		=> '無効ログインの最大数に達しました。ユーザーID: %s', // specify id since user cannot change that
+	'ban_error_limit_note'	=> "Banned by reaching error limit for type '%s'.", 
+    
+	'ban_invalid_logins_note'		=> '無効ログインの最大数に達しました。ユーザーID: %s', // specify id since user cannot change that
     
     'ip_auto_ban'           => 'IP自動禁止',
     

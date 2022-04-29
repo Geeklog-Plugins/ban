@@ -29,7 +29,14 @@
 
 global $_DB_table_prefix, $_TABLES;
 
-// Ban Record Status - Must be in this order
+
+// Current IP Ban Status used by $_BAN_IP_STATUS global variable - Must be in this order
+define("CONST_BAN_IP_STATUS_NOT_FLAGGED", 0); // not checked or only partially checked and still okay
+define("CONST_BAN_IP_STATUS_BANNED", 1);
+define("CONST_BAN_IP_STATUS_PASSED", 2); // So passed IP must have a status greater than this 
+define("CONST_BAN_IP_STATUS_WHITE", 3); 
+
+// Ban Database Record Status - Must be in this order
 define("CONST_BAN_STATUS_WHITE", 0); 
 define("CONST_BAN_STATUS_NORMAL", 1);
 define("CONST_BAN_STATUS_TTL_SHORT", 2);
@@ -47,10 +54,12 @@ $_BAN_CONF['logging'] = true; // master switch for all logging
 $_BAN_CONF['logging_db'] = false; // log banned access based on data from database
 $_BAN_CONF['logging_sfs'] = false; // log banned access based on stop forum spam database
 $_BAN_CONF['logging_auto'] = true; // log new auto banned ips that match rules
+$_BAN_CONF['logging_error'] = true; // log error limit banned ips that match limits
 
 // Set this flag to true to enable emailing of newly added banned ips to system admin
 $_BAN_CONF['email'] = true; // master switch for all email
 $_BAN_CONF['email_auto'] = true; // email new auto banned ips that match rules
+$_BAN_CONF['email_error'] = true; // email error limit banned ips that match limits
 
 // Who Is URL which includes a %s so an IP can be added to the url
 $_BAN_CONF['whois_url'] = 'https://whois.domaintools.com/%s';
@@ -69,6 +78,7 @@ $_BAN_CONF['ttl_long'] = 43829; // Month
 // Default Status to select
 $_BAN_CONF['default_status'] = CONST_BAN_STATUS_NORMAL;
 
+
 // Ban IP by using stopforumspam banned ips list
 $_BAN_CONF['stopforumspam'] = true;
 $_BAN_CONF['stopforumspam_file_date'] = 7; // the number of days before the stop forum spam database file is considered old and will be auto downloaded. Must be 1 or greater. Default is 7
@@ -78,15 +88,40 @@ $_BAN_CONF['stopforumspam_database_zip_name'] = "bannedips.zip";
 $_BAN_CONF['stopforumspam_database_name'] = "bannedips.csv";
 $_BAN_CONF['stopforumspam_database_location'] = "https://www.stopforumspam.com/downloads/"; // Make sure to include the last backslash in the download location
 
+
 // Ban IP by other plugins
 $_BAN_CONF['plugins_ban_ip_status'] = CONST_BAN_STATUS_TTL_LONG; // (anything except CONST_BAN_STATUS_WHITE is fine)
+
 
 // Ban IP of user which reached max invalid login attempts (Available only on Geeklog v2.2.0 and higher)
 // Note: This only bans the last IP used that attempted the login of a user account which has experienced the max number of invalid login attempts in a certain amount of time (this is set in the Geeklog Configuration)
 $_BAN_CONF['max_invalid_logins'] = true;
 $_BAN_CONF['max_invalid_logins_status'] = CONST_BAN_STATUS_TTL_MEDIUM; // (anything except CONST_BAN_STATUS_WHITE is fine)
 
-// ******* Careful with this as it could ban bots you want like Googlebot, msnbot, etc... (hint add them to your white list)
+
+// **********************************************************
+// Careful with these below as it could ban bots you want like Googlebot, msnbot, etc... (hint add them to your white list)
+// **********************************************************
+
+
+// Error Limits (since Geeklog 2.2.2)
+// Ban visitors who go over limits in x number of seconds
+$_BAN_CONF['error_limit'] = true;
+$_BAN_CONF['error_limit_status'] = CONST_BAN_STATUS_TTL_SHORT; // (anything except CONST_BAN_STATUS_WHITE is fine)
+// Note: The following config options are original stored in Geeklogs lib-plugins.php so these are just over writing them
+// Note: See plugins.php file for more info when you are considering changing these settings
+// Config Options for the max number of allowed tries within speed limit (from 1 to ...)
+$_CONF['speedlimit_max_error-403'] = 3; 
+$_CONF['speedlimit_max_error-404'] = 20;
+$_CONF['speedlimit_max_error-spam'] = 5;
+$_CONF['speedlimit_max_error-speedlimit'] = 10;
+// Config Options for the time window used in COM_clearSpeedlimit (in seconds)
+$_CONF['speedlimit_window_error-403'] = 60; 
+$_CONF['speedlimit_window_error-404'] = 120;
+$_CONF['speedlimit_window_error-spam'] = 270; // Based on anonymous users and all speedlimits (comment, likes, etc.) enabled and set to 45 seconds. 
+$_CONF['speedlimit_window_error-speedlimit'] = 540; // Based on 'error-spam' settings
+
+
 // Turn on Auto Ban
 $_BAN_CONF['ban_auto'] = true;
 $_BAN_CONF['ban_auto_check'] = 0; // NOT USED YET - Number of seconds to wait to check IP again (IP is stored in DB. If 0 check IP every time.)
