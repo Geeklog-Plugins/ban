@@ -1198,6 +1198,7 @@ function BAN_sfs_download()
         */
         
         $now = DateTime::createFromFormat('U.u', microtime(true));
+		$now->setTimeZone(new DateTimeZone(TimeZoneConfig::getTimezone()));
         $current_date = $now->format("Y-m-d H:i:s.u");        
         
         // SFS Download can only happen after retry time delay since download ip can get banned for downloading list too often
