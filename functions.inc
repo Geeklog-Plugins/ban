@@ -41,7 +41,6 @@ global $_BAN_CONF;
 
 $plugin_path = $_CONF['path'] . 'plugins/ban/';
 
-
 /**
 * Check and see if we need to load the plugin configuration
 */
@@ -80,6 +79,9 @@ if ($_BAN_CONF['stopforumspam_retry_download'] < 28800) { // Cannot be less than
 // Current status of visitor IP
 global $_BAN_IP_STATUS;
 $_BAN_IP_STATUS = CONST_BAN_IP_STATUS_NOT_FLAGGED;
+
+// Session Variable Name used By Ban Plugin
+define("CONST_BAN_IP_SESSION_VAR_NAME", 'BAN_IP_Info');
 
 // Make sure files match db install before we do ban check
 $installed_version = DB_getItem($_TABLES['plugins'], 'pi_version',
@@ -549,60 +551,116 @@ function BAN_check()
     
     $current_date = date("Y-m-d H:i:s");
     $dateinsec = strtotime($current_date);
-    
+	
+	
     $ans = CONST_BAN_IP_STATUS_NOT_FLAGGED; // flag for if any check is tripped
+	
+	// Use session variable to store IP status so do not have to do recheck if no new ban records
+	// Must always do auto ban as this is for bad behavior 
+	// If session empty, first visit for session then and nothing checked yet
+	$directIPCheckNeeded = true;
+	if ($_BAN_CONF['session_status_tracking']) {
+		$SFSDatabaseCheckRequired = false; // have to run a few checks to see if actually can do it
+		
+		// Note: We attempt to check to confirm no ban records have changed but this is not fool proof as existing ban record could get modified or deleted which this would not catch as we only track created date (though this is highly unlikely and the speed gain is worth it. If this happens then the session would have to end when session_cookie_timeout runs out.
+
+		// Check $sessionIPStatus['status'] and $sessionIPStatus['last_ip_full_check_date'] exist and is valid
+		$sessionIPStatus = unserialize(SESS_getVariable(CONST_BAN_IP_SESSION_VAR_NAME));
+		if (is_array($sessionIPStatus) 
+				AND (isset($sessionIPStatus['last_ip_full_check_date']) AND strtotime($sessionIPStatus['last_ip_full_check_date'])) 
+				AND (isset($sessionIPStatus['status']) AND is_numeric($sessionIPStatus['status']) AND $sessionIPStatus['status'] >= CONST_BAN_IP_STATUS_BANNED AND $sessionIPStatus['status'] <= CONST_BAN_IP_STATUS_WHITE)) {
+			// Check SFS Database for age of file
+			$databaseDate = '';
+			if ($_BAN_CONF['stopforumspam']) {
+				$db_location = $_CONF['path'] . 'plugins/ban/files/' . $_BAN_CONF['stopforumspam_database_name'];  
+				if (file_exists($db_location)) {
+					$SFSDatabaseCheckRequired = true;
+					$stats = stat($db_location);
+					$databaseDate = $stats[9]; 
+					$databaseDate = date('Y-m-d H:i:s', $databaseDate);
+
+					if ($databaseDate < $sessionIPStatus['last_ip_full_check_date']) {
+						$directIPCheckNeeded = false;
+					}
+				}
+			}
+			
+			// Check last created date of latest ban record
+			$sql = "SELECT id FROM {$_TABLES['ban']} WHERE created >= '{$sessionIPStatus['last_ip_full_check_date']}' LIMIT 1";
+			$result = DB_Query($sql);
+			$nrows = DB_numRows($result);
+			if ($nrows == 0) {
+				// if SFS Database is being used and its age is okay
+				if (($SFSDatabaseCheckRequired AND !$directIPCheckNeeded) OR !$SFSDatabaseCheckRequired) {
+					$directIPCheckNeeded = false;
+					// If already white or banned then set ans now so by pass auto ban
+					// else auto ban should be done (if enabled etc.)
+					if ($sessionIPStatus['status'] == CONST_BAN_IP_STATUS_WHITE OR $sessionIPStatus['status'] == CONST_BAN_IP_STATUS_BANNED) {
+						$ans = $sessionIPStatus['status'];
+					}
+				}
+			} else {
+				$directIPCheckNeeded = true; // in case SFS Database check changed it to false
+			}
+		} else {
+			$sessionIPStatus = [];
+		}
+	}
+	
 
     // ***********************
     // Have split up the checking of records like this (with more ban types that separate exact match and regex) to speed up ban check
     // Do 4 checks REMOTE_ADDR , HTTP_REFERER, HTTP_USER_AGENT, SCRIPT_NAME (not regular expression)
-    for ($i = 1; $i < 5; $i++) {
-        switch($i) {
-            case 1:    
-                $bantype = "REMOTE_ADDR";
-                $data = $REMOTE_ADDR;
-                break;
-            case 2:
-                $bantype = "HTTP_REFERER";
-                $data = $HTTP_REFERER;
-                break;
-            case 3:   
-                $bantype = "HTTP_USER_AGENT";
-                $data = $HTTP_USER_AGENT;
-                break;
-            case 4:   
-                $bantype = "SCRIPT_NAME";
-                $data = $SCRIPT_NAME;
-                break;
-        }
-        $data = stripslashes($data);
-        
-        $sql = "SELECT bantype, data, status FROM {$_TABLES['ban']} WHERE bantype = '$bantype' AND data = '$data'"; 
-        $result = DB_Query($sql,1);
-        $nrows = DB_numRows( $result );    
-        if ($nrows > 0) {
-            $A = DB_fetchArray($result);
-            $status = $A['status']; // Ban Status
-            
-            // quit on first positive match
-            if ($status == CONST_BAN_STATUS_WHITE) {
-                $ans = CONST_BAN_IP_STATUS_WHITE;
-                
-            } else {
-                $ans = CONST_BAN_IP_STATUS_BANNED; 
-                
-                if ($_BAN_CONF['logging_db']) {
-                    BAN_Log('Access Banned because ' . $A['bantype'] . " equals {$A['data']}");
-                }
-                
-                break;
-            }
-        }
-    } 
+	if ($directIPCheckNeeded) {
+		for ($i = 1; $i < 5; $i++) {
+			switch($i) {
+				case 1:    
+					$bantype = "REMOTE_ADDR";
+					$data = $REMOTE_ADDR;
+					break;
+				case 2:
+					$bantype = "HTTP_REFERER";
+					$data = $HTTP_REFERER;
+					break;
+				case 3:   
+					$bantype = "HTTP_USER_AGENT";
+					$data = $HTTP_USER_AGENT;
+					break;
+				case 4:   
+					$bantype = "SCRIPT_NAME";
+					$data = $SCRIPT_NAME;
+					break;
+			}
+			$data = stripslashes($data);
+			
+			$sql = "SELECT bantype, data, status FROM {$_TABLES['ban']} WHERE bantype = '$bantype' AND data = '$data'"; 
+			$result = DB_Query($sql,1);
+			$nrows = DB_numRows( $result );    
+			if ($nrows > 0) {
+				$A = DB_fetchArray($result);
+				$status = $A['status']; // Ban Status
+				
+				// quit on first positive match
+				if ($status == CONST_BAN_STATUS_WHITE) {
+					$ans = CONST_BAN_IP_STATUS_WHITE;
+					
+				} else {
+					$ans = CONST_BAN_IP_STATUS_BANNED; 
+					
+					if ($_BAN_CONF['logging_db']) {
+						BAN_Log('Access Banned because ' . $A['bantype'] . " equals {$A['data']}");
+					}
+					
+					break;
+				}
+			}
+		} 
+	}
     
     // ***********************
     // Now Check for ranges and regular expressions (regex) REMOTE_ADDR_RANGE, REMOTE_ADDR_CIDR, REMOTE_ADDR_REGEX, HTTP_REFERER_REGEX, HTTP_USER_AGENT_REGEX, SCRIPT_NAME_REGEX
     // Order by status first (so white list is first) 
-    if ($ans == CONST_BAN_IP_STATUS_NOT_FLAGGED) {
+    if ($directIPCheckNeeded AND $ans == CONST_BAN_IP_STATUS_NOT_FLAGGED) {
         $sql = "SELECT bantype, data, status FROM {$_TABLES['ban']} 
             WHERE bantype = 'REMOTE_ADDR_RANGE' OR bantype = 'REMOTE_ADDR_CIDR' OR bantype = 'REMOTE_ADDR_REGEX' OR bantype = 'HTTP_REFERER_REGEX' OR bantype = 'HTTP_USER_AGENT_REGEX' OR bantype = 'SCRIPT_NAME_REGEX' 
             ORDER BY status ASC";
@@ -659,7 +717,7 @@ function BAN_check()
     
     // ***********************
     // Check stop forum spam banned ips list as long as $ans not tripped (white list or other wise)        
-    if ($_BAN_CONF['stopforumspam'] AND $ans == CONST_BAN_IP_STATUS_NOT_FLAGGED) {
+    if ($directIPCheckNeeded AND $_BAN_CONF['stopforumspam'] AND $ans == CONST_BAN_IP_STATUS_NOT_FLAGGED) {
         $db_location = $_CONF['path'] . 'plugins/ban/files/bannedips.csv';
         $banned_ip_count = ipcheck_stopforumspam($REMOTE_ADDR, $db_location);
         if ($banned_ip_count >= 1){
@@ -895,6 +953,26 @@ function BAN_check()
         }
     }
     
+
+    if ($ans == CONST_BAN_IP_STATUS_WHITE) {
+        // White listed so continue to end of function
+	} elseif ($ans == CONST_BAN_IP_STATUS_NOT_FLAGGED) {
+		// IP Passed all checks
+		$ans = CONST_BAN_IP_STATUS_PASSED;
+    }
+
+	$_BAN_IP_STATUS = $ans;
+		
+	if ($_BAN_CONF['session_status_tracking']) {
+		$sessionIPStatus['status'] = $ans;
+		if ($directIPCheckNeeded) { 
+			$sessionIPStatus['last_ip_full_check_date'] = date("Y-m-d H:i:s");	
+		}
+		$sessionIPStatus['last_status_update_date'] = date("Y-m-d H:i:s");	
+		
+		SESS_setVariable(CONST_BAN_IP_SESSION_VAR_NAME, serialize($sessionIPStatus));
+	}
+	
     if ($ans == CONST_BAN_IP_STATUS_BANNED) { // Something has triggered the ban so... 
         if ($_BAN_CONF['page'] != '') {
             echo COM_redirect($_BAN_CONF['page']);
@@ -902,14 +980,7 @@ function BAN_check()
         } else {
             die();
         }
-    } elseif ($ans == CONST_BAN_IP_STATUS_WHITE) {
-        // White listed so continue to end of function
-	} else {
-		// IP Passed all checks
-		$ans = CONST_BAN_IP_STATUS_PASSED;
-    }
-	
-	$_BAN_IP_STATUS = $ans;
+	}
 }
 
 /**
