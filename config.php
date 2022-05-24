@@ -79,7 +79,8 @@ $_BAN_CONF['ttl_long'] = 43829; // Month
 $_BAN_CONF['default_status'] = CONST_BAN_STATUS_NORMAL;
 
 // Enable Ban Status storage with Session Variable
-// This means individual and ranges (regex) along with SFS database checks are only done once on first visit and result is saved with session. Checks are done to see if new database or new records added, if so ban check will be done again. This is not used with autoban since that is behavior of visitor over time.
+// This means individual and ranges (regex) along with SFS database checks are only done once on first visit and result is saved with session. This is not used with autoban since that is behavior of visitor over time.
+// Checks are done to see if new database or new records added, if so ban check will be done again.
 // This is much faster since check is done on first visit only. Only caveat is that modified or deleted ban records are not detected during same session. So if ban record deleted, current session for this user will not be affected until it times out (or session data is deleted)
 $_BAN_CONF['session_status_tracking'] = true;
 
