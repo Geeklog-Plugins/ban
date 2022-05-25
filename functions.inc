@@ -1261,6 +1261,7 @@ function BAN_sfs_download()
         $now->sub(new DateInterval('PT' . $_BAN_CONF['stopforumspam_retry_download'] . 'S')); // minus number of days sfs database is allowed to be old
 
         $last_download = DateTime::createFromFormat('Y-m-d H:i:s.u', $sfs_last_download_date);
+		$last_download->setTimeZone(new DateTimeZone(date_default_timezone_get()));
         
         if ($last_download !== false) {
             $last_download->add(new DateInterval('PT' . $_BAN_CONF['stopforumspam_retry_download'] . 'S')); // minus number of days sfs database is allowed to be old

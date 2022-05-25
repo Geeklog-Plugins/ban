@@ -249,6 +249,7 @@ function ban_list()
                 $instructions .= $LANG_BAN00['instructions_sfs_not_updated'];
             } else {
                 $last_download = DateTime::createFromFormat('Y-m-d H:i:s.u', $sfs_last_download_date);
+				$last_download->setTimeZone(new DateTimeZone(date_default_timezone_get()));
                 $last_download->add(new DateInterval('PT' . $_BAN_CONF['stopforumspam_retry_download'] . 'S')); // minus number of days sfs database is allowed to be old
                 $retry_date = $last_download->format("Y-m-d H:i:s");        
 
@@ -258,6 +259,7 @@ function ban_list()
             // Auto Download Information
             if ($_BAN_CONF['stopforumspam_auto_download']) {
                 $next_download = DateTime::createFromFormat('Y-m-d H:i:s.u', $sfs_last_download_date);
+				$next_download->setTimeZone(new DateTimeZone(date_default_timezone_get()));
                 $next_download->add(new DateInterval('P' . $_BAN_CONF['stopforumspam_file_date'] . 'D')); // minus number of days sfs database is allowed to be old
                 $auto_date = $next_download->format("Y-m-d H:i:s"); 
 
