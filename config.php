@@ -27,7 +27,7 @@
 // +---------------------------------------------------------------------------+
 //
 
-global $_DB_table_prefix, $_TABLES;
+global $_DB_table_prefix, $_TABLES, $_PLUGINS;
 
 
 // Current IP Ban Status used by $_BAN_IP_STATUS global variable - Must be in this order
@@ -47,7 +47,15 @@ $_BAN_CONF = [];
 
 // GUS stats table. We set this since if ban plugin loaded before gus we will not know table name
 // If ban plugin loaded after gus then gus will record banned ips stats
-$_BAN_CONF['gus_userstats_table']  = $_DB_table_prefix . 'gus_userstats';	
+$_BAN_CONF['gus_userstats_table'] = "";
+if (in_array("gus", $_PLUGINS)) {
+	if (isset($_TABLES['gus_userstats'])) {
+		$_BAN_CONF['gus_userstats_table'] = $_TABLES['gus_userstats'];
+	} else {
+		$gus_userstats_table = $_BAN_CONF['gus_userstats_table'];
+		$_BAN_CONF['gus_userstats_table']  = $_DB_table_prefix . 'gus_userstats';	
+	}
+}
 
 // Set this flag to true to enable logging of banned attempted accesses
 $_BAN_CONF['logging'] = true; // master switch for all logging

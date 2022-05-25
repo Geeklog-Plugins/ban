@@ -478,7 +478,7 @@ function BAN_for_plugins_ban_ip($ip, $plugin, $ban = true, $note = '')
  */
 function plugin_onSpeeding_ban($type, $property, $last)
 {
-	global $_TABLES, $_BAN_CONF, $_PLUGINS, $_TABLES, $LANG_BAN00, $_BAN_IP_STATUS, $_CONF;
+	global $_BAN_CONF, $LANG_BAN00, $_BAN_IP_STATUS, $_CONF;
 
 	// Check if on White List of IPs first before banning. This is already done in BAN_check which is run when functions.inc is loaded
 	if ($_BAN_CONF['error_limit'] && $last > 0 && $_BAN_IP_STATUS != CONST_BAN_IP_STATUS_WHITE) {
@@ -539,7 +539,7 @@ function plugin_onSpeeding_ban($type, $property, $last)
 
 function BAN_check()
 {
-    global $_TABLES, $_BAN_CONF, $_PLUGINS, $_TABLES, $LANG_BAN00, $_BAN_IP_STATUS, $_CONF;
+    global $_TABLES, $_BAN_CONF, $_TABLES, $LANG_BAN00, $_BAN_IP_STATUS, $_CONF;
     
     $HTTP_USER_AGENT = $_SERVER['HTTP_USER_AGENT']; 
     $REMOTE_ADDR = $_SERVER['REMOTE_ADDR'];
@@ -736,7 +736,7 @@ function BAN_check()
     // This process is expensive in terms of server resources
     if ($_BAN_CONF['ban_auto'] AND $ans == CONST_BAN_IP_STATUS_NOT_FLAGGED) { // Don't need to autoban if already banned or on whitelist
 
-        if (in_array("gus", $_PLUGINS)) {
+        if (!empty($_BAN_CONF['gus_userstats_table'])) {
             // Check: Referrer in a given time by IP. If they match the text then ban
             if ($_BAN_CONF['gus_referrer'] AND $ans == CONST_BAN_IP_STATUS_NOT_FLAGGED) {
                 $new_date = $dateinsec - $_BAN_CONF['gus_referrer_time'];
@@ -747,7 +747,7 @@ function BAN_check()
                         $comparison = ' LIKE \'' . BAN_getEncodedURL($match) . '%\' ';
                         
                         $sql = "SELECT ip 
-                            FROM $gus_userstats_table  
+                            FROM {$_BAN_CONF['gus_userstats_table']} 
                             WHERE ip = '{$REMOTE_ADDR}'
                             AND referer $comparison
                             AND  DATE_ADD(`date`, INTERVAL `time` HOUR_SECOND) >= '$new_date'";
@@ -805,7 +805,7 @@ function BAN_check()
                             }
                             
                             $sql = "SELECT ip 
-                                FROM $gus_userstats_table  
+                                FROM {$_BAN_CONF['gus_userstats_table']}   
                                 WHERE ip = '{$REMOTE_ADDR}'
                                 AND CONCAT(page, CONCAT('%3F', query_string)) $comparison 
                                 AND page <> '' 
@@ -849,7 +849,7 @@ function BAN_check()
                 $new_date = date('Y-m-d H:i:s', $new_date);
     
                 $sql = "SELECT ua_id 
-                    FROM $gus_userstats_table  
+                    FROM {$_BAN_CONF['gus_userstats_table']}   
                     WHERE ip = '{$REMOTE_ADDR}' 
                     AND  DATE_ADD(`date`, INTERVAL `time` HOUR_SECOND) >= '$new_date'
                     GROUP BY ua_id";
@@ -887,7 +887,7 @@ function BAN_check()
                 $new_date = date('Y-m-d H:i:s', $new_date);
     
                 $sql = "SELECT COUNT(ip) count_ip
-                    FROM $gus_userstats_table  
+                    FROM {$_BAN_CONF['gus_userstats_table']}   
                     WHERE ip = '{$REMOTE_ADDR}' 
                     AND  DATE_ADD(`date`, INTERVAL `time` HOUR_SECOND) >= '$new_date'";
                 
@@ -1174,22 +1174,14 @@ function BAN_email($message)
 // Create Host Info for emails and log records
 function BAN_hostInfo() 
 {
-	global $_BAN_CONF, $_PLUGINS, $_TABLES;
+	global $_BAN_CONF, $_TABLES;
 	
 	$hostInfo = "";
 	
-	if (in_array("gus", $_PLUGINS)) {
-		// Find GUS stats table. We set this since if ban plugin loaded before gus we will not know table name
-		// If ban plugin loaded after gus then gus will record banned ips stats
-		if (isset($_TABLES['gus_userstats'])) {
-			$gus_userstats_table = $_TABLES['gus_userstats'];
-		} else {
-			$gus_userstats_table = $_BAN_CONF['gus_userstats_table'];
-		}
-		
+	if (!empty($_BAN_CONF['gus_userstats_table'])) {
 		// Get Host for IP from GUS record
 		$sql = "SELECT host 
-			FROM $gus_userstats_table  
+			FROM {$_BAN_CONF['gus_userstats_table']}   
 			WHERE ip = '{$REMOTE_ADDR}' 
 			AND host != '' 
 			LIMIT 1";
