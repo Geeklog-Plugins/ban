@@ -552,7 +552,6 @@ function BAN_check()
     $current_date = date("Y-m-d H:i:s");
     $dateinsec = strtotime($current_date);
 	
-	
     $ans = CONST_BAN_IP_STATUS_NOT_FLAGGED; // flag for if any check is tripped
 	
 	// Use session variable to store IP status so do not have to do recheck if no new ban records
@@ -1252,16 +1251,9 @@ function BAN_sfs_download()
     if (function_exists('curl_version')){
         // Figure out when last download happened
         $sfs_last_download_date = DB_getItem($_TABLES['vars'], 'value', "name='ban_last_sfsdownload'"); // put it here to make the check as fast as possible
-        /*
-        $current_date = date("Y-m-d H:i:s"); 
-        
-        $dateinsec = strtotime($current_date);    
-        $new_date = $dateinsec - ($_BAN_CONF['stopforumspam_file_date'] * 60 * 60 * 24);
-        $new_date = date('Y-m-d H:i:s', $new_date);
-        */
         
         $now = DateTime::createFromFormat('U.u', microtime(true));
-		$now->setTimeZone(new DateTimeZone(TimeZoneConfig::getTimezone()));
+		$now->setTimeZone(new DateTimeZone(date_default_timezone_get()));
         $current_date = $now->format("Y-m-d H:i:s.u");        
         
         // SFS Download can only happen after retry time delay since download ip can get banned for downloading list too often

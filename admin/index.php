@@ -242,7 +242,7 @@ function ban_list()
 
             // Manual Retry date
             $now = DateTime::createFromFormat('U.u', microtime(true));
-			$now->setTimeZone(new DateTimeZone(TimeZoneConfig::getTimezone()));
+			$now->setTimeZone(new DateTimeZone(date_default_timezone_get()));
             $current_date = $now->format("Y-m-d H:i:s");
 
             if ($sfs_last_download_date == '') {
