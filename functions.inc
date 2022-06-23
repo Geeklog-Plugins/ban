@@ -1176,6 +1176,7 @@ function BAN_hostInfo()
 	global $_BAN_CONF, $_TABLES;
 	
 	$hostInfo = "";
+	$REMOTE_ADDR = $_SERVER['REMOTE_ADDR'];
 	
 	if (!empty($_BAN_CONF['gus_userstats_table'])) {
 		// Get Host for IP from GUS record
