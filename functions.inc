@@ -73,7 +73,7 @@ if ($_BAN_CONF['stopforumspam_file_date'] < 1) {
     $_BAN_CONF['stopforumspam_file_date'] = 7;
 }
 if ($_BAN_CONF['stopforumspam_retry_download'] < 28800) { // Cannot be less than 8 hours or 28800 seconds
-    $_BAN_CONF['stopforumspam_file_date'] = 28800;
+    $_BAN_CONF['stopforumspam_retry_download'] = 28800;
 }
 
 // Current status of visitor IP
@@ -1262,58 +1262,66 @@ function BAN_sfs_download()
         $now->sub(new DateInterval('PT' . $_BAN_CONF['stopforumspam_retry_download'] . 'S')); // minus number of days sfs database is allowed to be old
 
         $last_download = DateTime::createFromFormat('Y-m-d H:i:s.u', $sfs_last_download_date);
-		$last_download->setTimeZone(new DateTimeZone(date_default_timezone_get()));
-        
-        if ($last_download !== false) {
-            $last_download->add(new DateInterval('PT' . $_BAN_CONF['stopforumspam_retry_download'] . 'S')); // minus number of days sfs database is allowed to be old
-            $retry_date = $last_download->format("Y-m-d H:i:s"); 
-            
-            if ($retry_date <= $current_date) {
-                //Set latest SFS download attempt
-                DB_query("UPDATE {$_TABLES['vars']} SET value='{$current_date}' WHERE name='ban_last_sfsdownload'");          
-            
-                // Download sfs database zip file
-                $destination = $_CONF['path'] . 'plugins/ban/files/';
-                $source = $_BAN_CONF['stopforumspam_database_location'] . $_BAN_CONF['stopforumspam_database_zip_name'];
-                $filename = $_BAN_CONF['stopforumspam_database_zip_name'];
-                
-                $ch = curl_init();
-                curl_setopt($ch, CURLOPT_URL, $source);
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-                // curl_setopt($ch, CURLOPT_SSLVERSION,3); // Use if file location uses ssl
-                $data = curl_exec ($ch);
-                $error = curl_error($ch); 
-                curl_close ($ch);
-                
-                // Check if error with download via curl
-                if ($error === false) { 
-                    COM_errorLog('Ban plugin could not download the Stop Forum Spam database - Curl error: ' . $error, 1);
-                } else {
-                    if (is_writable($destination . $filename)) {
-                        $file = fopen($destination . $filename, "w+");
-                        fputs($file, $data);
-                        fclose($file);    
-                        
-                        // Unzip file
-                        $zip = new ZipArchive;
-                        if ($zip->open($destination . $filename) === TRUE) {
-                            if ($zip->extractTo($destination) === TRUE) {
-                                $retval = true;
-                            } else {
-                                COM_errorLog("Could not unzip Stop Forum Spam database file. File may be corrupted. Make sure source location is correct: $source",1);
-                            }
-                            $zip->close();
-                        } else {
-                            COM_errorLog("Could not open zipped Stop Forum Spam database file. File may be corrupted. Make sure source location is correct: $source",1);
-                        }
-                    } else {
-                        COM_errorLog("Please check file/directory permissions. Could not write to file: $destination$filename",1);
-                    }
-                }
-            } else {
-                COM_errorLog("Ban plugin did not download SFS database file. It was last downloaded at $sfs_last_download_date and the next time it is allowed to download is $retry_date.",1);
-            }
-        }
+        if ($last_download == false) {
+			// sfs_last_download_date is empty or not a date so generate an old date
+			$sfs_last_download_date = date('Y-m-d H:i:s.u', strtotime ("-1 years"));
+			
+			$last_download = DateTime::createFromFormat('Y-m-d H:i:s.u', $sfs_last_download_date);
+		}
+		if ($last_download !== false) {
+			$last_download->setTimeZone(new DateTimeZone(date_default_timezone_get()));
+			
+			$last_download->add(new DateInterval('PT' . $_BAN_CONF['stopforumspam_retry_download'] . 'S')); // minus number of days sfs database is allowed to be old
+			$retry_date = $last_download->format("Y-m-d H:i:s"); 
+			
+			if ($retry_date <= $current_date) {
+				//Set latest SFS download attempt
+				DB_query("UPDATE {$_TABLES['vars']} SET value='{$current_date}' WHERE name='ban_last_sfsdownload'");          
+			
+				// Download sfs database zip file
+				$destination = $_CONF['path'] . 'plugins/ban/files/';
+				$source = $_BAN_CONF['stopforumspam_database_location'] . $_BAN_CONF['stopforumspam_database_zip_name'];
+				$filename = $_BAN_CONF['stopforumspam_database_zip_name'];
+				
+				$ch = curl_init();
+				curl_setopt($ch, CURLOPT_URL, $source);
+				curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+				// curl_setopt($ch, CURLOPT_SSLVERSION,3); // Use if file location uses ssl
+				$data = curl_exec ($ch);
+				$error = curl_error($ch); 
+				curl_close ($ch);
+				
+				// Check if error with download via curl
+				if ($error === false) { 
+					COM_errorLog('Ban plugin could not download the Stop Forum Spam database - Curl error: ' . $error, 1);
+				} else {
+					if (is_writable($destination . $filename)) {
+						$file = fopen($destination . $filename, "w+");
+						fputs($file, $data);
+						fclose($file);    
+						
+						// Unzip file
+						$zip = new ZipArchive;
+						if ($zip->open($destination . $filename) === TRUE) {
+							if ($zip->extractTo($destination) === TRUE) {
+								$retval = true;
+							} else {
+								COM_errorLog("Could not unzip Stop Forum Spam database file. File may be corrupted. Make sure source location is correct: $source",1);
+							}
+							$zip->close();
+						} else {
+							COM_errorLog("Could not open zipped Stop Forum Spam database file. File may be corrupted. Make sure source location is correct: $source",1);
+						}
+					} else {
+						COM_errorLog("Please check file/directory permissions. Could not write to file: $destination$filename",1);
+					}
+				}
+			} else {
+				COM_errorLog("Ban plugin did not download SFS database file. It was last downloaded at $sfs_last_download_date and the next time it is allowed to download is $retry_date.",1);
+			}
+		} else {
+			COM_errorLog("Ban plugin could not figure out or set a new date for the Geeklog VAR sfs_last_download_date which = '$sfs_last_download_date'.",1);
+		}
     } else {
         COM_errorLog('Ban plugin could not download the Stop Forum Spam database file because the curl PHP extension is missing.',1);
     }   
