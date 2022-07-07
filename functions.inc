@@ -481,7 +481,7 @@ function plugin_onSpeeding_ban($type, $property, $last)
 	global $_BAN_CONF, $LANG_BAN00, $_BAN_IP_STATUS, $_CONF;
 
 	// Check if on White List of IPs first before banning. This is already done in BAN_check which is run when functions.inc is loaded
-	if ($_BAN_CONF['error_limit'] && $last > 0 && $_BAN_IP_STATUS != CONST_BAN_IP_STATUS_WHITE) {
+	if ($_BAN_CONF['error_limit'] && $last > 0 && ($_BAN_IP_STATUS != CONST_BAN_IP_STATUS_WHITE && $_BAN_IP_STATUS != CONST_BAN_IP_STATUS_BANNED)) {
 		$REMOTE_ADDR = $_SERVER['REMOTE_ADDR'];
 		
 		$maxLimit = '';
