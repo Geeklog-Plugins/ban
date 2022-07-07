@@ -19,7 +19,13 @@ Current Maintainers: <a href="https://github.com/orgs/Geeklog-Plugins/people" ta
 
 <p>The Ban plugin allows you to ban people and bots from your website.  You can ban a bot/visitor by IP, Referer, User Agent or Script Name.  Exact matches and case insensitive regular expressions (regex) are used to give you great flexibility.  The php preg_match function is used to do the regular expressions matches.</p>
 
-<p>As of Ban plugin v2.0.0 new features include the ability to set a Ban Status for a Ban record, use the Stop Forum Spam Database to ban IPs, and Auto Ban visitors based on their previous visits using the GUS Plugin data. As of Geeklog v2.2.2 banning IPs based on Error Limits being hit was added. All these features have multiple config settings that can be set in the Ban config.php file.</p>
+<p>As of Ban plugin v2.0.0 new features include the ability to set a Ban Status for a Ban record, use the Stop Forum Spam Database to ban IPs, and Auto Ban visitors based on their previous visits using the GUS Plugin data.</p>
+
+<p>As of Geeklog v2.2.0 the ban plugin can ban the IP of a visitor when a user account has reached the max invalid login attempts.</p>
+
+<p>As of Geeklog v2.2.2 and Ban plugin v2.0.4 banning IPs based on Error Limits being hit was added.</p>
+
+<p>All these features have multiple config settings that can be set in the Ban config.php file.</p>
 
 <h3>Ban Status</h3>
 
@@ -41,6 +47,9 @@ Current Maintainers: <a href="https://github.com/orgs/Geeklog-Plugins/people" ta
 </ul>
 
 <p>Please note the current error limit settings take into account search engine bots that can accidentally trigger these errors when indexing your website. Tightening these settings further may inadvertently ban a search engine bot like Google if the IP is not already White Listed. The ban plugin is set by default to notify the Geeklog Administrator of when an IP is banned. It is a good idea to review these emails and check the host record attached to the banned IP (link is included in the email) to ensure it is not from a search engine you want indexing your website.</p>
+
+<h3>Login Attempts Limit Bans</h3>
+<p>The Ban plugin can be set to ban an IP of a visitor when the max invalid logins is reached for a user account. This only bans the last IP used that attempted the login of a user account which has experienced the max number of invalid login attempts in a certain amount of time (these settings are set in the Geeklog Configuration).<p>
 
 <h3>Auto Bans</h3>
 <p>Auto banning of IPs is based on data from the GUS plugin. It is disabled by default and requires the GUS plugin to be installed and enabled to work. Currently there are 4 options which can be configured in the config.php file.</p> 
