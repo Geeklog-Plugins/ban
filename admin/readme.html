@@ -6,7 +6,7 @@
 </head>
 
 <body>
-<h1><a href="https://github.com/Geeklog-Plugins/ban">Geeklog Ban Plugin v2.0.1</a></h1>
+<h1><a href="https://github.com/Geeklog-Plugins/ban">Geeklog Ban Plugin v2.0.4</a></h1>
 <p>Original Release Date: October 2003<br>
 Original Author: Tom Willett<br>
 Current Maintainers: <a href="https://github.com/orgs/Geeklog-Plugins/people" target="_blank">Geeklog Community Members</a></p>
@@ -19,14 +19,28 @@ Current Maintainers: <a href="https://github.com/orgs/Geeklog-Plugins/people" ta
 
 <p>The Ban plugin allows you to ban people and bots from your website.  You can ban a bot/visitor by IP, Referer, User Agent or Script Name.  Exact matches and case insensitive regular expressions (regex) are used to give you great flexibility.  The php preg_match function is used to do the regular expressions matches.</p>
 
-<p>As of Ban plugin v2.0.0 new features include the ability to set a Ban Status for a Ban record, use the Stop Forum Spam Database to ban IPs, and Auto Ban visitors based on their previous visits using the GUS Plugin data. All these features have multiple config settings that can be set in the Ban config.php file.</p>
+<p>As of Ban plugin v2.0.0 new features include the ability to set a Ban Status for a Ban record, use the Stop Forum Spam Database to ban IPs, and Auto Ban visitors based on their previous visits using the GUS Plugin data. As of Geeklog v2.2.2 banning IPs based on Error Limits being hit was added. All these features have multiple config settings that can be set in the Ban config.php file.</p>
 
 <h3>Ban Status</h3>
 
 <p>There are 5 Ban Status types. A White Ban Status allows any visitor that matches the status to proceed to the requested page. This is used to make sure specific visitors that you want cannot be banned (like Admins and Google Bot). White lists are always checked first. The Normal Ban Status is the default. Whatever is banned will be banned until the record is deleted by an Administrator. The rest of the  Ban Statuses will last only a certain time period (TTL = Time To Live) before the Ban record is deleted. By default the Ban Status TTL Short is set to one day, TTL Medium is set to 1 week, and TTL Long is set to 1 month.</p>
 
 <h3>Stop Forum Spam Database (SFS)</h3>
-<p>You can also now ban IPs automatically that exist in the <a href="https://www.stopforumspam.com" target="_blank">Stop Forum Spam database</a>. The Ban plugin doesn't access the database on the SFS website directly as that would be very inefficient. Instead a file stored locally on your server (/plugins/ban/files/bannedips.csv) is used. You can either download the csv file manually (<a href="https://www.stopforumspam.com/downloads" target="_blank">All IPs in CSV (one line, comma seperated)</a>) or setup the plugin to auto download the file every so often. It is recommended that the file is downloaded once a week. Also if you do setup the Auto download (this is a beta feature and disabled by default) of the file please make sure it does work (check the Geeklog error.log file) as if the Ban Plugin attempts to download the file to often your own IP could get banned on the SFS website. There are checks in the plugin to prevent downloading the file to often but they may not always be accurate.</p>
+<p>You can also now ban IPs automatically that exist in the <a href="https://www.stopforumspam.com" target="_blank">Stop Forum Spam database</a>. The Ban plugin doesn't access the database on the SFS website directly as that would be very inefficient. Instead a file stored locally on your server (/plugins/ban/files/bannedips.csv) is used. You can either download the csv file manually (<a href="https://www.stopforumspam.com/downloads" target="_blank">All IPs in CSV (one line, comma separated)</a>) or setup the plugin to auto download the file every so often. It is recommended that the file is downloaded once a week. Also if you do setup the Auto download (this is a beta feature and disabled by default) of the file please make sure it does work (check the Geeklog error.log file) as if the Ban Plugin attempts to download the file to often your own IP could get banned on the SFS website. There are checks in the plugin to prevent downloading the file to often but they may not always be accurate.</p>
+
+<p>Please note that that the Ban plugin will need write permissions to the files directory (/plugins/ban/files) where the Stop Forum Spam database is stored and extracted when downloaded. Make sure that the directory has the permissions set to at least 755 AND the files in it have permissions of at least 644. You may need to make the permissions 775 or 777 and 664 or 666 (respectively) if 755 and 644 doesn't work on the web server.</p>
+
+<h3>Error Limit Bans</h3>
+<p>Error Limits can be set for visitors who go over predefined limits in X number of seconds. These are set in the Ban plugin config file. When an error limit is reached by that IP it will be banned (default setting is a day). Error limits tracked by Geeklog included:</p>
+
+<ul>
+<li>404 Errors - Happens when a visitor attempts to visit a page that does not exist or doesn't exist when certain URL variables are used</li>
+<li>403 Errors - Happens when a visitor attempts to access the Geeklog Admin area when their user account does not have permission too (plugins can also set this as an error if needed)</li>
+<li>SPAM Errors - Any content submission error that triggers the SPAM filter from the SPAM-X Plugin</li>
+<li>Speed Limit Errors - Any errors that trigger Geeklogs speed limit feature. For example a user tries to submit a second comment or like before its specified speed limit has expired</li>
+</ul>
+
+<p>Please note the current error limit settings take into account search engine bots that can accidentally trigger these errors when indexing your website. Tightening these settings further may inadvertently ban a search engine bot like Google if the IP is not already White Listed. The ban plugin is set by default to notify the Geeklog Administrator of when an IP is banned. It is a good idea to review these emails and check the host record attached to the banned IP (link is included in the email) to ensure it is not from a search engine you want indexing your website.</p>
 
 <h3>Auto Bans</h3>
 <p>Auto banning of IPs is based on data from the GUS plugin. It is disabled by default and requires the GUS plugin to be installed and enabled to work. Currently there are 4 options which can be configured in the config.php file.</p> 
