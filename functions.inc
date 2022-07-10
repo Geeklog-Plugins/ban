@@ -1252,8 +1252,8 @@ function BAN_sfs_download()
     if (function_exists('curl_version')){
         // Figure out when last download happened
         $sfs_last_download_date = DB_getItem($_TABLES['vars'], 'value', "name='ban_last_sfsdownload'"); // put it here to make the check as fast as possible
-        
-        $now = DateTime::createFromFormat('U.u', microtime(true));
+        $microtime = microtime(true); // Can't just use microtime(true) when createFromFormat with U.u as not always decimal and will error. See: https://stackoverflow.com/questions/53738427/php-error-call-to-a-member-function-settimezone-on-boolean
+        $now = DateTime::createFromFormat('U.u', stripos($microtime, '.') ? $microtime : $microtime + 0.001);
 		$now->setTimeZone(new DateTimeZone(date_default_timezone_get()));
         $current_date = $now->format("Y-m-d H:i:s.u");        
         
