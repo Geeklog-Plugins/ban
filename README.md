@@ -1,8 +1,8 @@
-# Geeklog Ban plugin - version 2.0.4
+# Geeklog Ban plugin - version 2.0.5
 
 * Current Maintainers: [Geeklog Community Members](https://github.com/orgs/Geeklog-Plugins/people)
 * Original Author: Tom Willett
-* Release Date: 2022-?-?
+* Release Date: 2022-11-14
 
 **Requires minimum Geeklog version 2.2.1
 
@@ -92,4 +92,6 @@ Config.php in the plugins/ban/ directory has a number of variables that control 
 
 
 -----
+* 2.0.5 - Release Date: November 14, 2022
+* 2.0.2 - Release Date: June 7, 2018
 * 2.0.1 - Release Date: March 30, 2017

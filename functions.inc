@@ -193,12 +193,11 @@ function plugin_upgrade_ban()
             break;
             
         case '2.0.1':
-            $current_version = '2.0.2';
+		case '2.0.2':
+		case '2.0.3':
+		case '2.0.4':
+            $current_version = '2.0.5';
             break;
-            
-        case '2.0.2':
-            $current_version = '2.0.3';
-            break;            
 
         default:
             $done = true;
