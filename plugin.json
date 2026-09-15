@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "id": "ban",
+  "name": "ban",
+  "icon": "admin/images/ban.png",
+  "requires": {
+    "geeklog": "2.2.1"
+  }
+}
